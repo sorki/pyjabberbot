@@ -55,7 +55,10 @@ def botcmd(*args, **kwargs):
 
 
 class JabberBot(object):
-    AWAY, CHAT, DND, XA = 'away', 'chat', 'dnd', 'xa'
+    AVAILABLE, AWAY, CHAT, DND, XA, OFFLINE = None, 'away', 'chat', 'dnd', 'xa', 'unavailable'
+
+    MSG_AUTHORIZE_ME = 'Hey there. You are not yet on my roster. Authorize my request and I will do the same.'
+    MSG_NOT_AUTHORIZED = 'You did not authorize my subscription request. Access denied.'
 
     def __init__( self, jid, password, res=None):
         """Initializes the jabber bot and sets up commands."""
@@ -66,6 +69,8 @@ class JabberBot(object):
         self.__finished = False
         self.__show = None
         self.__status = None
+        self.__seen = {}
+        self.__threads = {}
 
         self.commands = { 'help': self.help_callback, }
         for name, value in inspect.getmembers(self):
@@ -100,6 +105,10 @@ class JabberBot(object):
 
 ################################
 
+    @botcmd
+    def seen(self, mess, args):
+        return '\n'.join(('%s: %s' % (a, b) for (a, b) in self.__seen.items()))
+
     def log( self, s):
         """Logging facility, can be overridden in subclasses to log to file, etc.."""
         print '%s: %s' % ( self.__class__.__name__, s, )
@@ -121,8 +130,10 @@ class JabberBot(object):
             conn.sendInitPresence()
             self.conn = conn
             self.roster = self.conn.Roster.getRoster()
+            print '*** roster ***'
             for contact in self.roster.getItems():
-                print contact
+                print '  -', contact
+            print '*** roster ***'
 
         return self.conn
 
@@ -138,37 +149,89 @@ class JabberBot(object):
         """
         self.__finished = True
 
-    def send( self, user, text, in_reply_to = None):
+    def send(self, user, text, in_reply_to=None, message_type='chat'):
         """Sends a simple message to the specified user."""
-        mess = xmpp.Message( user, text)
+        mess = xmpp.Message(user, text)
+
         if in_reply_to:
             mess.setThread( in_reply_to.getThread())
             mess.setType( in_reply_to.getType())
+        else:
+            mess.setThread(self.__threads.get(user, None))
+            mess.setType(message_type)
         
-        self.connect().send( mess)
+        self.connect().send(mess)
+
+    def status_type_changed(self, jid, new_status_type):
+        """Callback for tracking status types (available, away, offline, ...)"""
+        print 'user ', jid, ' changed status to ', new_status_type
+
+    def status_message_changed(self, jid, new_status_message):
+        """Callback for tracking status messages (the free-form status text)"""
+        print 'user ', jid, ' updated the text to ', new_status_message
+
+    def broadcast(self, message, only_available=False):
+        """Broadcast a message to all users 'seen' by this bot.
+
+        If the parameter 'only_available' is True, the broadcast
+        will not go to users whose status is not 'Available'."""
+        for jid, (show, status) in self.__seen.items():
+            if not only_available or show is self.AVAILABLE:
+                self.send(jid, message)
 
     def callback_presence(self, conn, presence):
-        jid = presence.getFrom()
+        jid, type_, show, status = presence.getFrom(), \
+                presence.getType(), presence.getShow(), \
+                presence.getStatus()
+
+        if self.jid.bareMatch(jid):
+            # Ignore our own presence messages
+            return
+
+        if type_ is None:
+            # Keep track of status message and type changes
+            old_show, old_status = self.__seen.get(jid, (self.OFFLINE, None))
+            if old_show != show:
+                self.status_type_changed(jid, show)
+
+            if old_status != status:
+                self.status_message_changed(jid, status)
+
+            self.__seen[jid] = (show, status)
+        elif type_ == self.OFFLINE and jid in self.__seen:
+            # Notify of user offline status change
+            del self.__seen[jid]
+            self.status_type_changed(jid, self.OFFLINE)
+
         try:
             subscription = self.roster.getSubscription(str(jid))
-        except:
+        except KeyError, ke:
+            # User not on our roster
             subscription = None
 
-        if subscription == 'from':
-            self.roster.Subscribe(jid)
+        if type_ == 'error':
+            print presence.getError()
 
-        if presence.getType() == 'subscribe':
-            # Reply the subscription request (if the user is on our roster)
-            if subscription == 'to':
-                print 'sending subscribed response'
-                self.roster.Authorize(jid)
-                self.send(presence.getFrom(), 'subscribed - thanks :)')
-                self._send_status()
-            elif subscription is None or subscription == 'none':
-                self.roster.Unauthorize(jid)
-                self.send(presence.getFrom(), 'sorry, you are not yet on my roster. allow me to add you and then re-request')
-                self.roster.Subscribe(jid)
         print 'Got presence: %s (type: %s, show: %s, status: %s, subscription: %s)' % (presence.getFrom(), presence.getType(),presence.getShow(), presence.getStatus(), subscription)
+
+        if type_ == 'subscribe':
+            # Incoming presence subscription request
+            if subscription in ('to', 'both', 'from'):
+                self.roster.Authorize(jid)
+                self._send_status()
+
+            if subscription not in ('to', 'both'):
+                self.roster.Subscribe(jid)
+
+            if subscription in (None, 'none'):
+                self.send(jid, self.MSG_AUTHORIZE_ME)
+        elif type_ == 'subscribed':
+            # Authorize any pending requests for that JID
+            self.roster.Authorize(jid)
+        elif type_ == 'unsubscribed':
+            # Authorization was not granted
+            self.send(jid, self.MSG_NOT_AUTHORIZED)
+            self.roster.Unauthorize(jid)
 
     def callback_message( self, conn, mess):
         """Messages sent to the bot will arrive here. Command handling + routing is done in this function."""
@@ -177,6 +240,14 @@ class JabberBot(object):
         # If a message format is not supported (eg. encrypted), txt will be None
         if not text:
             return
+
+        # Ignore messages from users not seen by this bot
+        if mess.getFrom() not in self.__seen:
+            print 'message from unseen guest ', mess.getFrom()
+            return
+
+        # Remember the last-talked-in thread for replies
+        self.__threads[mess.getFrom()] = mess.getThread()
 
         if ' ' in text:
             command, args = text.split(' ',1)
