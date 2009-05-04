@@ -28,65 +28,77 @@ except ImportError:
     print >>sys.stderr, 'You need to install xmpppy from http://xmpppy.sf.net/.'
     sys.exit(-1)
 import inspect
-
+import traceback
 
 """A simple jabber/xmpp bot framework
 
 This is a simple bot framework around the "xmpppy" framework.
 Copyright (c) 2007-2009 Thomas Perl <thpinfo.com>
-
-To use, subclass the "JabberBot" class and implement "bot_" methods 
-(or whatever you set the command_prefix to), like this:
-
-class StupidEchoBot(JabberBot):
-    def bot_echo( self, mess, args):
-        "The command description goes here"
-        return 'You said: ' + args
-
-    def bot_subscribe( self, mess, args):
-        "HIDDEN (Authorize the presence subscription request)"
-        # The docstring for this command has "HIDDEN" in it, so
-        # the help output does not show this command.
-        f = mess.getFrom()
-        self.conn.Roster.Authorize( f)
-        return 'Authorized.'
-
-    def unknown_command( self, mess, cmd, args):
-        "This optional method, if present, gets called if the
-        command is not recognized."
-        if args.split()[0].startswith( 'cheese'):
-            return 'Sorry, cheesy commands not available.'
-        else:
-            # if we return None, the default 'unknown command' text will get printed.
-            return None
-
-username = 'jid@server.example.com'
-password = 'mypassword'
-
-bot = StupidEchoBot( username, password)
-bot.serve_forever()
-
 """
 
 __author__ = 'Thomas Perl <thp@thpinfo.com>'
-__version__ = '0.6'
+__version__ = '0.7'
+
+
+def botcmd(*args, **kwargs):
+    """Decorator for bot command functions"""
+
+    def decorate(func, hidden=False):
+        setattr(func, '_jabberbot_command', True)
+        setattr(func, '_jabberbot_hidden', hidden)
+        return func
+
+    if len(args):
+        return decorate(args[0], **kwargs)
+    else:
+        return lambda func: decorate(func, **kwargs)
 
 
 class JabberBot(object):
-    command_prefix = 'bot_'
+    AWAY, CHAT, DND, XA = 'away', 'chat', 'dnd', 'xa'
 
-    def __init__( self, jid, password, res = None):
+    def __init__( self, jid, password, res=None):
         """Initializes the jabber bot and sets up commands."""
-        self.jid = xmpp.JID( jid)
+        self.jid = xmpp.JID(jid)
         self.password = password
         self.res = (res or self.__class__.__name__)
         self.conn = None
         self.__finished = False
+        self.__show = None
+        self.__status = None
 
         self.commands = { 'help': self.help_callback, }
-        for (name, value) in inspect.getmembers( self):
-            if inspect.ismethod( value) and name.startswith( self.command_prefix):
-                self.commands[name[len(self.command_prefix):]] = value
+        for name, value in inspect.getmembers(self):
+            if inspect.ismethod(value) and getattr(value, '_jabberbot_command', False):
+                print 'registered command: %s' % value
+                self.commands[name] = value
+
+################################
+
+    def _send_status(self):
+        self.conn.send(xmpp.dispatcher.Presence(show=self.__show, status=self.__status))
+
+    def __set_status(self, value):
+        if self.__status != value:
+            self.__status = value
+            self._send_status()
+
+    def __get_status(self):
+        return self.__status
+
+    status_message = property(fget=__get_status, fset=__set_status)
+
+    def __set_show(self, value):
+        if self.__show != value:
+            self.__show = value
+            self._send_status()
+
+    def __get_show(self):
+        return self.__show
+
+    status_type = property(fget=__get_show, fset=__set_show)
+
+################################
 
     def log( self, s):
         """Logging facility, can be overridden in subclasses to log to file, etc.."""
@@ -104,9 +116,13 @@ class JabberBot(object):
                 self.log( 'unable to authorize with server.')
                 return None
             
-            conn.RegisterHandler( 'message', self.callback_message)
+            conn.RegisterHandler('message', self.callback_message)
+            conn.RegisterHandler('presence', self.callback_presence)
             conn.sendInitPresence()
             self.conn = conn
+            self.roster = self.conn.Roster.getRoster()
+            for contact in self.roster.getItems():
+                print contact
 
         return self.conn
 
@@ -131,6 +147,29 @@ class JabberBot(object):
         
         self.connect().send( mess)
 
+    def callback_presence(self, conn, presence):
+        jid = presence.getFrom()
+        try:
+            subscription = self.roster.getSubscription(str(jid))
+        except:
+            subscription = None
+
+        if subscription == 'from':
+            self.roster.Subscribe(jid)
+
+        if presence.getType() == 'subscribe':
+            # Reply the subscription request (if the user is on our roster)
+            if subscription == 'to':
+                print 'sending subscribed response'
+                self.roster.Authorize(jid)
+                self.send(presence.getFrom(), 'subscribed - thanks :)')
+                self._send_status()
+            elif subscription is None or subscription == 'none':
+                self.roster.Unauthorize(jid)
+                self.send(presence.getFrom(), 'sorry, you are not yet on my roster. allow me to add you and then re-request')
+                self.roster.Subscribe(jid)
+        print 'Got presence: %s (type: %s, show: %s, status: %s, subscription: %s)' % (presence.getFrom(), presence.getType(),presence.getShow(), presence.getStatus(), subscription)
+
     def callback_message( self, conn, mess):
         """Messages sent to the bot will arrive here. Command handling + routing is done in this function."""
         text = mess.getBody()
@@ -147,7 +186,11 @@ class JabberBot(object):
         cmd = command.lower()
     
         if self.commands.has_key(cmd):
-            reply = self.commands[cmd]( mess, args)
+            try:
+                reply = self.commands[cmd]( mess, args)
+            except Exception, e:
+                reply = traceback.format_exc(e)
+                print reply
         else:
             unk_str = 'Unknown command: "%s". Type "help" for available commands.' % cmd
             reply = self.unknown_command( mess, cmd, args) or unk_str
@@ -167,7 +210,7 @@ class JabberBot(object):
 
     def help_callback( self, mess, args):
         """Returns a help string listing available options. Automatically assigned to the "help" command."""
-        usage = '\n'.join(sorted(['%s: %s' % (name, command.__doc__ or '(undocumented)') for (name, command) in self.commands.items() if name != 'help' and (not command.__doc__ or not command.__doc__.startswith('HIDDEN'))]))
+        usage = '\n'.join(sorted(['%s: %s' % (name, command.__doc__ or '(undocumented)') for (name, command) in self.commands.items() if name != 'help' and not command._jabberbot_hidden]))
 
         if self.__doc__:
             description = self.__doc__.strip()
@@ -195,6 +238,7 @@ class JabberBot(object):
         while not self.__finished:
             try:
                 conn.Process(1)
+                #conn.sendPresence()
                 self.idle_proc()
             except KeyboardInterrupt:
                 self.log('bot stopped by user request. shutting down.')
