@@ -72,10 +72,10 @@ class JabberBot(object):
         self.__seen = {}
         self.__threads = {}
 
-        self.commands = { 'help': self.help_callback, }
+        self.commands = {}
         for name, value in inspect.getmembers(self):
             if inspect.ismethod(value) and getattr(value, '_jabberbot_command', False):
-                print 'registered command: %s' % value
+                self.debug('Registered command: %s' % name)
                 self.commands[name] = value
 
 ################################
@@ -105,17 +105,16 @@ class JabberBot(object):
 
 ################################
 
-    @botcmd
-    def seen(self, mess, args):
-        return '\n'.join(('%s: %s' % (a, b) for (a, b) in self.__seen.items()))
+    def debug(self, s):
+        self.log(s)
 
     def log( self, s):
         """Logging facility, can be overridden in subclasses to log to file, etc.."""
-        print '%s: %s' % ( self.__class__.__name__, s, )
+        print self.__class__.__name__, ':', s
 
     def connect( self):
         if not self.conn:
-            conn = xmpp.Client( self.jid.getDomain(), debug = [])
+            conn = xmpp.Client(self.jid.getDomain())
             
             if not conn.connect():
                 self.log( 'unable to connect to server.')
@@ -130,10 +129,10 @@ class JabberBot(object):
             conn.sendInitPresence()
             self.conn = conn
             self.roster = self.conn.Roster.getRoster()
-            print '*** roster ***'
+            self.log('*** roster ***')
             for contact in self.roster.getItems():
-                print '  -', contact
-            print '*** roster ***'
+                self.log('  ' + str(contact))
+            self.log('*** roster ***')
 
         return self.conn
 
@@ -154,21 +153,21 @@ class JabberBot(object):
         mess = xmpp.Message(user, text)
 
         if in_reply_to:
-            mess.setThread( in_reply_to.getThread())
-            mess.setType( in_reply_to.getType())
+            mess.setThread(in_reply_to.getThread())
+            mess.setType(in_reply_to.getType())
         else:
             mess.setThread(self.__threads.get(user, None))
             mess.setType(message_type)
-        
+
         self.connect().send(mess)
 
     def status_type_changed(self, jid, new_status_type):
         """Callback for tracking status types (available, away, offline, ...)"""
-        print 'user ', jid, ' changed status to ', new_status_type
+        self.debug('user %s changed status to %s' % (jid, new_status_type))
 
     def status_message_changed(self, jid, new_status_message):
         """Callback for tracking status messages (the free-form status text)"""
-        print 'user ', jid, ' updated the text to ', new_status_message
+        self.debug('user %s updated text to %s' % (jid, new_status_message))
 
     def broadcast(self, message, only_available=False):
         """Broadcast a message to all users 'seen' by this bot.
@@ -210,9 +209,9 @@ class JabberBot(object):
             subscription = None
 
         if type_ == 'error':
-            print presence.getError()
+            self.log(presence.getError())
 
-        print 'Got presence: %s (type: %s, show: %s, status: %s, subscription: %s)' % (presence.getFrom(), presence.getType(),presence.getShow(), presence.getStatus(), subscription)
+        self.debug('Got presence: %s (type: %s, show: %s, status: %s, subscription: %s)' % (jid, type_, show, status, subscription))
 
         if type_ == 'subscribe':
             # Incoming presence subscription request
@@ -235,40 +234,41 @@ class JabberBot(object):
 
     def callback_message( self, conn, mess):
         """Messages sent to the bot will arrive here. Command handling + routing is done in this function."""
-        text = mess.getBody()
+        jid, text = mess.getFrom(), mess.getBody()
     
         # If a message format is not supported (eg. encrypted), txt will be None
         if not text:
             return
 
         # Ignore messages from users not seen by this bot
-        if mess.getFrom() not in self.__seen:
-            print 'message from unseen guest ', mess.getFrom()
+        if jid not in self.__seen:
+            self.log('Ignoring message from unseen guest: %s' % jid)
             return
 
         # Remember the last-talked-in thread for replies
-        self.__threads[mess.getFrom()] = mess.getThread()
+        self.__threads[jid] = mess.getThread()
 
         if ' ' in text:
-            command, args = text.split(' ',1)
+            command, args = text.split(' ', 1)
         else:
-            command, args = text,''
+            command, args = text, ''
     
         cmd = command.lower()
     
         if self.commands.has_key(cmd):
             try:
-                reply = self.commands[cmd]( mess, args)
+                reply = self.commands[cmd](mess, args)
             except Exception, e:
                 reply = traceback.format_exc(e)
+                self.log('An error happened while processing a message ("%s") from %s: %s"' % (text, jid, reply))
                 print reply
         else:
-            unk_str = 'Unknown command: "%s". Type "help" for available commands.' % cmd
+            unk_str = 'Unknown command: "%s". Type "help" for available commands.<b>blubb!</b>' % cmd
             reply = self.unknown_command( mess, cmd, args) or unk_str
         if reply:
-            self.send( mess.getFrom(), reply, mess)
+            self.send(jid, reply, mess)
 
-    def unknown_command( self, mess, cmd, args):
+    def unknown_command(self, mess, cmd, args):
         """Default handler for unknown commands
 
         Override this method in derived class if you 
@@ -279,7 +279,8 @@ class JabberBot(object):
         """
         return None
 
-    def help_callback( self, mess, args):
+    @botcmd
+    def help( self, mess, args):
         """Returns a help string listing available options. Automatically assigned to the "help" command."""
         usage = '\n'.join(sorted(['%s: %s' % (name, command.__doc__ or '(undocumented)') for (name, command) in self.commands.items() if name != 'help' and not command._jabberbot_hidden]))
 
@@ -309,7 +310,6 @@ class JabberBot(object):
         while not self.__finished:
             try:
                 conn.Process(1)
-                #conn.sendPresence()
                 self.idle_proc()
             except KeyboardInterrupt:
                 self.log('bot stopped by user request. shutting down.')
