@@ -60,10 +60,12 @@ class JabberBot(object):
     MSG_AUTHORIZE_ME = 'Hey there. You are not yet on my roster. Authorize my request and I will do the same.'
     MSG_NOT_AUTHORIZED = 'You did not authorize my subscription request. Access denied.'
 
-    def __init__( self, jid, password, res=None):
+    def __init__(self, username, password, res=None, debug=False):
         """Initializes the jabber bot and sets up commands."""
-        self.jid = xmpp.JID(jid)
-        self.password = password
+        self.__debug = debug
+        self.__username = username
+        self.__password = password
+        self.jid = xmpp.JID(self.__username)
         self.res = (res or self.__class__.__name__)
         self.conn = None
         self.__finished = False
@@ -112,18 +114,31 @@ class JabberBot(object):
         """Logging facility, can be overridden in subclasses to log to file, etc.."""
         print self.__class__.__name__, ':', s
 
+    def dlog(self, s):
+        """Logging facility, can be overridden in subclasses to log to file, etc.."""
+        if self.__debug: self.log(s)
+
     def connect( self):
         if not self.conn:
-            conn = xmpp.Client(self.jid.getDomain())
-            
-            if not conn.connect():
-                self.log( 'unable to connect to server.')
+            if self.__debug:
+                conn = xmpp.Client(self.jid.getDomain())
+            else:
+                conn = xmpp.Client(self.jid.getDomain(), debug = [])
+
+            conres = conn.connect()
+            if not conres:
+                self.log( 'unable to connect to server %s.' % self.jid.getDomain())
                 return None
-            
-            if not conn.auth( self.jid.getNode(), self.password, self.res):
-                self.log( 'unable to authorize with server.')
+            if conres<>'tls':
+                self.log("Warning: unable to establish secure connection - TLS failed!")
+
+            authres = conn.auth(self.jid.getNode(), self.__password, self.res)
+            if not authres:
+                self.log('unable to authorize with server.')
                 return None
-            
+            if authres<>'sasl':
+                self.log("Warning: unable to perform SASL auth os %s. Old authentication method used!" % self.jid.getDomain())
+
             conn.RegisterHandler('message', self.callback_message)
             conn.RegisterHandler('presence', self.callback_presence)
             conn.sendInitPresence()
@@ -136,17 +151,25 @@ class JabberBot(object):
 
         return self.conn
 
+    def join_room(self, room):
+        room_plus_nick = "%s/%s" % (room,self.__username)
+        self.connect().send(xmpp.Presence(to=room_plus_nick))
+
     def quit( self):
         """Stop serving messages and exit.
-        
-        I find it is handy for development to run the 
-        jabberbot in a 'while true' loop in the shell, so 
-        whenever I make a code change to the bot, I send 
+
+        I find it is handy for development to run the
+        jabberbot in a 'while true' loop in the shell, so
+        whenever I make a code change to the bot, I send
         the 'reload' command, which I have mapped to call
-        self.quit(), and my shell script relaunches the 
+        self.quit(), and my shell script relaunches the
         new version.
         """
         self.__finished = True
+
+    def send_message(self, mess):
+        """Send an XMPP message"""
+        self.connect().send(mess)
 
     def send(self, user, text, in_reply_to=None, message_type='chat'):
         """Sends a simple message to the specified user."""
@@ -159,7 +182,30 @@ class JabberBot(object):
             mess.setThread(self.__threads.get(user, None))
             mess.setType(message_type)
 
-        self.connect().send(mess)
+        self.send_message(mess)
+
+    def build_reply(self, mess, text=None):
+        """Build a message for responding to another message.  Message is NOT sent"""
+        to_user  = mess.getFrom().getStripped()
+        response = xmpp.Message(to_user, text)
+        response.setThread(mess.getThread())
+        response.setType(mess.getType())
+        return response
+
+    def send_simple_reply(self, mess, text):
+        """Send a simple response to a message"""
+        self.send_message( self.build_reply(mess,text) )
+
+    def get_sender_username(self, mess):
+        type  = mess.getType()
+        user  = mess.getFrom()
+        if type == "groupchat":
+            username = user.getResource()
+        elif type == "chat":
+            username  = user.getNode()
+        else:
+            username = "unknown_username"
+        return username
 
     def status_type_changed(self, jid, new_status_type):
         """Callback for tracking status types (available, away, offline, ...)"""
@@ -234,50 +280,90 @@ class JabberBot(object):
 
     def callback_message( self, conn, mess):
         """Messages sent to the bot will arrive here. Command handling + routing is done in this function."""
-        jid, text = mess.getFrom(), mess.getBody()
-    
-        # If a message format is not supported (eg. encrypted), txt will be None
-        if not text:
+
+        # Prepare to handle either private chats or group chats
+        type     = mess.getType()
+        user     = mess.getFrom()
+        props    = mess.getProperties()
+        text     = mess.getBody()
+        username = self.get_sender_username(mess)
+
+        if type != "groupchat" and type != "chat":
+            self.dlog("unhandled message type: %s" % type)
             return
 
+        self.dlog("*** props = %s" % props)
+        self.dlog("*** user = %s" % user)
+        self.dlog("*** username = %s" % username)
+        self.dlog("*** type = %s" % type)
+        self.dlog("*** text = %s" % text)
+
+        # Ignore messages from before we joined
+        if xmpp.NS_DELAY in props: return
+
+        # Ignore messages from myself
+        if username == self.__username: return
+
+        # If a message format is not supported (eg. encrypted), txt will be None
+        if not text: return
+
         # Ignore messages from users not seen by this bot
-        if jid not in self.__seen:
-            self.log('Ignoring message from unseen guest: %s' % jid)
+        if user not in self.__seen:
+            self.log('Ignoring message from unseen guest: %s' % user)
+            self.log("I've seen: %s" % ["%s" % x for x in self.__seen.keys()])
             return
 
         # Remember the last-talked-in thread for replies
-        self.__threads[jid] = mess.getThread()
+        self.__threads[user] = mess.getThread()
 
         if ' ' in text:
             command, args = text.split(' ', 1)
         else:
             command, args = text, ''
-    
         cmd = command.lower()
-    
+        self.dlog("*** cmd = %s" % cmd)
+
         if self.commands.has_key(cmd):
             try:
                 reply = self.commands[cmd](mess, args)
             except Exception, e:
                 reply = traceback.format_exc(e)
-                self.log('An error happened while processing a message ("%s") from %s: %s"' % (text, jid, reply))
+                self.log('An error happened while processing a message ("%s") from %s: %s"' % (text, user, reply))
                 print reply
         else:
             unk_str = 'Unknown command: "%s". Type "help" for available commands.<b>blubb!</b>' % cmd
             reply = self.unknown_command( mess, cmd, args) or unk_str
         if reply:
-            self.send(jid, reply, mess)
+            self.send_simple_reply(mess,reply)
 
     def unknown_command(self, mess, cmd, args):
         """Default handler for unknown commands
 
-        Override this method in derived class if you 
-        want to trap some unrecognized commands.  If 
-        'cmd' is handled, you must return some non-false 
+        Override this method in derived class if you
+        want to trap some unrecognized commands.  If
+        'cmd' is handled, you must return some non-false
         value, else some helpful text will be sent back
         to the sender.
         """
         return None
+
+    def top_of_help_message(self):
+        """Returns a string that forms the top of the help message
+
+        Override this method in derived class if you
+        want to add additional help text at the
+        beginning of the help message.
+        """
+        return ""
+
+    def bottom_of_help_message(self):
+        """Returns a string that forms the bottom of the help message
+
+        Override this method in derived class if you
+        want to add additional help text at the end
+        of the help message.
+        """
+        return ""
 
     @botcmd
     def help( self, mess, args):
@@ -289,10 +375,23 @@ class JabberBot(object):
         else:
             description = 'Available commands:'
 
-        return '%s\n\n%s' % ( description, usage, )
+        top    = self.top_of_help_message()
+        bottom = self.bottom_of_help_message()
+        if top    != "": top    = top + "\n\n"
+        if bottom != "": bottom = "\n\n" + bottom
+
+        return '%s%s\n\n%s%s' % ( top, description, usage, bottom )
 
     def idle_proc( self):
         """This function will be called in the main loop."""
+        pass
+
+    def shutdown(self):
+        """This function will be called when we're done serving
+
+        Override this method in derived class if you
+        want to do anything special at shutdown.
+        """
         pass
 
     def serve_forever( self, connect_callback = None, disconnect_callback = None):
@@ -314,6 +413,8 @@ class JabberBot(object):
             except KeyboardInterrupt:
                 self.log('bot stopped by user request. shutting down.')
                 break
+
+        self.shutdown()
 
         if disconnect_callback:
             disconnect_callback()
