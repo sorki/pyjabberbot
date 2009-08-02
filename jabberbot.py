@@ -194,12 +194,13 @@ class JabberBot(object):
         return response
 
     def get_sender_username(self, mess):
-        type  = mess.getType()
-        user  = mess.getFrom()
+        """Extract the sender's user name from a message""" 
+        type = mess.getType()
+        jid  = mess.getFrom()
         if type == "groupchat":
-            username = user.getResource()
+            username = jid.getResource()
         elif type == "chat":
-            username  = user.getNode()
+            username  = jid.getNode()
         else:
             username = "unknown_username"
         return username
@@ -280,17 +281,17 @@ class JabberBot(object):
 
         # Prepare to handle either private chats or group chats
         type     = mess.getType()
-        user     = mess.getFrom()
+        jid      = mess.getFrom()
         props    = mess.getProperties()
         text     = mess.getBody()
         username = self.get_sender_username(mess)
 
-        if type != "groupchat" and type != "chat":
+        if type not in ("groupchat", "chat"):
             self.debug("unhandled message type: %s" % type)
             return
 
         self.debug("*** props = %s" % props)
-        self.debug("*** user = %s" % user)
+        self.debug("*** jid = %s" % jid)
         self.debug("*** username = %s" % username)
         self.debug("*** type = %s" % type)
         self.debug("*** text = %s" % text)
@@ -305,13 +306,13 @@ class JabberBot(object):
         if not text: return
 
         # Ignore messages from users not seen by this bot
-        if user not in self.__seen:
-            self.log('Ignoring message from unseen guest: %s' % user)
+        if jid not in self.__seen:
+            self.log('Ignoring message from unseen guest: %s' % jid)
             self.debug("I've seen: %s" % ["%s" % x for x in self.__seen.keys()])
             return
 
         # Remember the last-talked-in thread for replies
-        self.__threads[user] = mess.getThread()
+        self.__threads[jid] = mess.getThread()
 
         if ' ' in text:
             command, args = text.split(' ', 1)
@@ -325,7 +326,7 @@ class JabberBot(object):
                 reply = self.commands[cmd](mess, args)
             except Exception, e:
                 reply = traceback.format_exc(e)
-                self.log('An error happened while processing a message ("%s") from %s: %s"' % (text, user, reply))
+                self.log('An error happened while processing a message ("%s") from %s: %s"' % (text, jid, reply))
                 print reply
         else:
             # In private chat, it's okay for the bot to always respond.
