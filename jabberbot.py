@@ -108,15 +108,11 @@ class JabberBot(object):
 ################################
 
     def debug(self, s):
-        self.log(s)
+        if self.__debug: self.log(s)
 
     def log( self, s):
         """Logging facility, can be overridden in subclasses to log to file, etc.."""
         print self.__class__.__name__, ':', s
-
-    def dlog(self, s):
-        """Logging facility, can be overridden in subclasses to log to file, etc.."""
-        if self.__debug: self.log(s)
 
     def connect( self):
         if not self.conn:
@@ -152,8 +148,8 @@ class JabberBot(object):
         return self.conn
 
     def join_room(self, room):
-        room_plus_nick = "%s/%s" % (room,self.__username)
-        self.connect().send(xmpp.Presence(to=room_plus_nick))
+        my_room_JID = "%s/%s" % (room,self.__username)
+        self.connect().send(xmpp.Presence(to=my_room_JID))
 
     def quit( self):
         """Stop serving messages and exit.
@@ -289,14 +285,14 @@ class JabberBot(object):
         username = self.get_sender_username(mess)
 
         if type != "groupchat" and type != "chat":
-            self.dlog("unhandled message type: %s" % type)
+            self.debug("unhandled message type: %s" % type)
             return
 
-        self.dlog("*** props = %s" % props)
-        self.dlog("*** user = %s" % user)
-        self.dlog("*** username = %s" % username)
-        self.dlog("*** type = %s" % type)
-        self.dlog("*** text = %s" % text)
+        self.debug("*** props = %s" % props)
+        self.debug("*** user = %s" % user)
+        self.debug("*** username = %s" % username)
+        self.debug("*** type = %s" % type)
+        self.debug("*** text = %s" % text)
 
         # Ignore messages from before we joined
         if xmpp.NS_DELAY in props: return
@@ -310,7 +306,7 @@ class JabberBot(object):
         # Ignore messages from users not seen by this bot
         if user not in self.__seen:
             self.log('Ignoring message from unseen guest: %s' % user)
-            self.log("I've seen: %s" % ["%s" % x for x in self.__seen.keys()])
+            self.debug("I've seen: %s" % ["%s" % x for x in self.__seen.keys()])
             return
 
         # Remember the last-talked-in thread for replies
@@ -321,7 +317,7 @@ class JabberBot(object):
         else:
             command, args = text, ''
         cmd = command.lower()
-        self.dlog("*** cmd = %s" % cmd)
+        self.debug("*** cmd = %s" % cmd)
 
         if self.commands.has_key(cmd):
             try:
