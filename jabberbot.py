@@ -202,7 +202,7 @@ class JabberBot(object):
         elif type == "chat":
             username  = jid.getNode()
         else:
-            username = "unknown_username"
+            username = ""
         return username
 
     def status_type_changed(self, jid, new_status_type):
