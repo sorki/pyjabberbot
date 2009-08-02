@@ -148,6 +148,7 @@ class JabberBot(object):
         return self.conn
 
     def join_room(self, room):
+        """Join the specified multi-user chat room"""
         my_room_JID = "%s/%s" % (room,self.__username)
         self.connect().send(xmpp.Presence(to=my_room_JID))
 
@@ -180,6 +181,10 @@ class JabberBot(object):
 
         self.send_message(mess)
 
+    def send_simple_reply(self, mess, text):
+        """Send a simple response to a message"""
+        self.send_message( self.build_reply(mess,text) )
+
     def build_reply(self, mess, text=None):
         """Build a message for responding to another message.  Message is NOT sent"""
         to_user  = mess.getFrom().getStripped()
@@ -187,10 +192,6 @@ class JabberBot(object):
         response.setThread(mess.getThread())
         response.setType(mess.getType())
         return response
-
-    def send_simple_reply(self, mess, text):
-        """Send a simple response to a message"""
-        self.send_message( self.build_reply(mess,text) )
 
     def get_sender_username(self, mess):
         type  = mess.getType()
@@ -329,7 +330,7 @@ class JabberBot(object):
         else:
             # In private chat, it's okay for the bot to always respond.
             # In group chat, the bot should silently ignore commands it
-            # doesn't understand (or aren't handled by unknown_command).
+            # doesn't understand or aren't handled by unknown_command().
             default_reply = 'Unknown command: "%s". Type "help" for available commands.<b>blubb!</b>' % cmd
             if type == "groupchat": default_reply = None
             reply = self.unknown_command( mess, cmd, args) or default_reply
@@ -377,8 +378,8 @@ class JabberBot(object):
 
         top    = self.top_of_help_message()
         bottom = self.bottom_of_help_message()
-        if top    != "": top    = top + "\n\n"
-        if bottom != "": bottom = "\n\n" + bottom
+        if top   : top    = "%s\n\n" % top
+        if bottom: bottom = "\n\n%s" % bottom
 
         return '%s%s\n\n%s%s' % ( top, description, usage, bottom )
 
