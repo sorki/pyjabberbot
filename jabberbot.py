@@ -181,16 +181,21 @@ class JabberBot(object):
 
         self.send_message(mess)
 
-    def send_simple_reply(self, mess, text):
+    def send_simple_reply(self, mess, text, private=False):
         """Send a simple response to a message"""
-        self.send_message( self.build_reply(mess,text) )
+        self.send_message( self.build_reply(mess,text, private) )
 
-    def build_reply(self, mess, text=None):
+    def build_reply(self, mess, text=None, private=False):
         """Build a message for responding to another message.  Message is NOT sent"""
-        to_user  = mess.getFrom().getStripped()
+        if private: 
+            to_user  = mess.getFrom()
+            type = "chat"
+        else:
+            to_user  = mess.getFrom().getStripped()
+            type = mess.getType()
         response = xmpp.Message(to_user, text)
         response.setThread(mess.getThread())
-        response.setType(mess.getType())
+        response.setType(type)
         return response
 
     def get_sender_username(self, mess):
