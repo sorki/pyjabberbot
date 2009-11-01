@@ -16,8 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Homepage: http://thpinfo.com/2007/python-jabberbot/
-#
 
 
 import sys
@@ -30,15 +28,12 @@ except ImportError:
 import inspect
 import traceback
 
-"""A simple jabber/xmpp bot framework
-
-This is a simple bot framework around the "xmpppy" framework.
-Copyright (c) 2007-2009 Thomas Perl <thpinfo.com>
-"""
+"""A simple jabber/xmpp bot framework"""
 
 __author__ = 'Thomas Perl <thp@thpinfo.com>'
 __version__ = '0.7'
-
+__website__ = 'http://thpinfo.com/2007/python-jabberbot/'
+__license__ = 'GPLv3 or later'
 
 def botcmd(*args, **kwargs):
     """Decorator for bot command functions"""
