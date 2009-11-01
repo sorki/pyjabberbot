@@ -1,0 +1,17 @@
+
+Python-JabberBot
+~~~~~~~~~~~~~~~~
+
+This is python-jabberbot. See [1] for more information. Source code is
+available at [2] (use [3] as Git clone URL). The contributors involved in
+this release can be found in the file AUTHORS. Example code that you can
+use to get started can be found in the "examples/" subdirectory.
+
+You need to have the "xmpppy" module installed, as jabberbot depends on it.
+
+[1] http://thpinfo.com/2007/python-jabberbot/
+[2] http://repo.or.cz/w/gpodder.git
+[3] git://repo.or.cz/gpodder.git
+
+-- Thomas Perl <thpinfo.com>
+
