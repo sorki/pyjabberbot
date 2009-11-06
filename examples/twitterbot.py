@@ -62,11 +62,13 @@ class TwitterBot(jabberbot.JabberBot):
         else:
             return jabberbot.JabberBot.callback_message(self, conn, mess)
 
-    def bot_friends(self, mess, args):
+    @botcmd
+    def friends(self, mess, args):
         """Return the friends"""
         return ', '.join([u.name for u in self.api.GetFriends()])
 
-    def bot_post(self, mess, args):
+    @botcmd
+    def post(self, mess, args):
         """Post a message to twitter"""
         posting = self.api.PostUpdate(args)
         return 'http://twitter.com/'+posting.GetUser().GetScreenName()+'/status/'+str(posting.GetId())

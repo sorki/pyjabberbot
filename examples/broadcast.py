@@ -42,7 +42,8 @@ class BroadcastingJabberBot(JabberBot):
         self.message_queue = []
         self.thread_killed = False
 
-    def bot_subscribe( self, mess, args):
+    @botcmd
+    def subscribe( self, mess, args):
         """Subscribe to the broadcast list"""
         user = mess.getFrom()
         if user in self.users:
@@ -52,7 +53,8 @@ class BroadcastingJabberBot(JabberBot):
             self.log( '%s subscribed to the broadcast.' % user)
             return 'You are now subscribed.'
 
-    def bot_unsubscribe( self, mess, args):
+    @botcmd
+    def unsubscribe( self, mess, args):
         """Unsubscribe from the broadcast list"""
         user = mess.getFrom()
         if not user in self.users:
@@ -62,7 +64,10 @@ class BroadcastingJabberBot(JabberBot):
             self.log( '%s unsubscribed from the broadcast.' % user)
             return 'You are now unsubscribed.'
     
-    def bot_broadcast( self, mess, args):
+    # You can use the "hidden" parameter to hide the
+    # command from JabberBot's 'help' list
+    @botcmd(hidden=True)
+    def broadcast( self, mess, args):
         """Sends out a broadcast, supply message as arguments (e.g. broadcast hello)"""
         self.message_queue.append( 'broadcast: %s (from %s)' % ( args, str(mess.getFrom()), ))
         self.log( '%s sent out a message to %d users.' % ( str(mess.getFrom()), len(self.users),))
