@@ -20,6 +20,8 @@
 import twitter
 import jabberbot
 
+botcmd = jabberbot.botcmd
+
 # Configure your Jabber and Twitter authentication and secret phrase
 JABBERBOT_USER = 'jabberbot@example.com'
 JABBERBOT_PASS = 'jabberbotpassword'

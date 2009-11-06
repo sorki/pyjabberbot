@@ -24,7 +24,7 @@
 # from other threads or processes, too.
 #
 
-from jabberbot import JabberBot
+from jabberbot import JabberBot, botcmd
 
 import threading
 import time 
