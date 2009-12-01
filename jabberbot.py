@@ -368,14 +368,24 @@ class JabberBot(object):
         return ""
 
     @botcmd
-    def help( self, mess, args):
-        """Returns a help string listing available options. Automatically assigned to the "help" command."""
-        usage = '\n'.join(sorted(['%s: %s' % (name, command.__doc__ or '(undocumented)') for (name, command) in self.commands.items() if name != 'help' and not command._jabberbot_hidden]))
+    def help(self, mess, args):
+        """Returns a help string listing available options.
 
-        if self.__doc__:
-            description = self.__doc__.strip()
+        Automatically assigned to the "help" command."""
+        if not args:
+            if self.__doc__:
+                description = self.__doc__.strip()
+            else:
+                description = 'Available commands:'
+
+            usage = '\n'.join(sorted(['%s: %s' % (name, (command.__doc__ or '(undocumented)').split('\n', 1)[0]) for (name, command) in self.commands.items() if name != 'help' and not command._jabberbot_hidden]))
+            usage = usage + '\n\nType help <command name> to get more info about that specific command.'
         else:
-            description = 'Available commands:'
+            description = ''
+            if args in self.commands:
+                usage = self.commands[args].__doc__ or 'undocumented'
+            else:
+                usage = 'That command is not defined.'
 
         top    = self.top_of_help_message()
         bottom = self.bottom_of_help_message()
