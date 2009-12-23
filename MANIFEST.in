@@ -1,2 +1,2 @@
-include AUTHORS
+include AUTHORS COPYING
 include examples/*.py

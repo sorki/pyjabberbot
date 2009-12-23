@@ -31,7 +31,7 @@ import traceback
 """A simple jabber/xmpp bot framework"""
 
 __author__ = 'Thomas Perl <thp@thpinfo.com>'
-__version__ = '0.8'
+__version__ = '0.9'
 __website__ = 'http://thpinfo.com/2007/python-jabberbot/'
 __license__ = 'GPLv3 or later'
 
