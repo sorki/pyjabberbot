@@ -19,6 +19,7 @@
 
 
 import os
+import re
 import sys
 
 try:
@@ -203,7 +204,8 @@ class JabberBot(object):
 
     def send(self, user, text, in_reply_to=None, message_type='chat'):
         """Sends a simple message to the specified user."""
-        mess = xmpp.Message(user, text)
+        mess = self.build_message(text)
+        mess.setTo(user)
 
         if in_reply_to:
             mess.setThread(in_reply_to.getThread())
@@ -220,16 +222,30 @@ class JabberBot(object):
 
     def build_reply(self, mess, text=None, private=False):
         """Build a message for responding to another message.  Message is NOT sent"""
-        if private: 
-            to_user  = mess.getFrom()
-            type = "chat"
+        response = self.build_message(text)
+        if private:
+            response.setTo(mess.getFrom())
+            response.setType('chat')
         else:
-            to_user  = mess.getFrom().getStripped()
-            type = mess.getType()
-        response = xmpp.Message(to_user, text)
+            response.setTo(mess.getFrom().getStripped())
+            response.setType(mess.getType())
         response.setThread(mess.getThread())
-        response.setType(type)
         return response
+
+    def build_message(self, text):
+        """Builds an xhtml message without attributes."""
+        text_plain = re.sub(r'<[^>]+>', '', text)
+        message = xmpp.protocol.Message(body=text_plain)
+        if text_plain != text:
+            html = xmpp.Node('html', {'xmlns': 'http://jabber.org/protocol/xhtml-im'})
+            try:
+                html.addChild(node=xmpp.simplexml.XML2Node("<body xmlns='http://www.w3.org/1999/xhtml'>" + text.encode('utf-8') + "</body>"))
+                message.addChild(node=html)
+            except Exception, e:
+                # Didn't work, incorrect markup or something.
+                # print >> sys.stderr, e, text
+                message = xmpp.protocol.Message(body=text_plain)
+        return message
 
     def get_sender_username(self, mess):
         """Extract the sender's user name from a message""" 
