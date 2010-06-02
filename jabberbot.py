@@ -390,7 +390,9 @@ class JabberBot(object):
             # doesn't understand or aren't handled by unknown_command().
             default_reply = 'Unknown command: "%s". Type "help" for available commands.<b>blubb!</b>' % cmd
             if type == "groupchat": default_reply = None
-            reply = self.unknown_command( mess, cmd, args) or default_reply
+            reply = self.unknown_command( mess, cmd, args)
+            if reply is None:
+                reply = default_reply
         if reply:
             self.send_simple_reply(mess,reply)
 
