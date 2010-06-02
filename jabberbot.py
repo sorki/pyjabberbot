@@ -40,9 +40,10 @@ __license__ = 'GPLv3 or later'
 def botcmd(*args, **kwargs):
     """Decorator for bot command functions"""
 
-    def decorate(func, hidden=False):
+    def decorate(func, hidden=False, name=None):
         setattr(func, '_jabberbot_command', True)
         setattr(func, '_jabberbot_hidden', hidden)
+        setattr(func, '_jabberbot_command_name', name or func.__name__)
         return func
 
     if len(args):
@@ -74,6 +75,7 @@ class JabberBot(object):
         self.commands = {}
         for name, value in inspect.getmembers(self):
             if inspect.ismethod(value) and getattr(value, '_jabberbot_command', False):
+                name = getattr(value, '_jabberbot_command_name')
                 self.debug('Registered command: %s' % name)
                 self.commands[name] = value
 
