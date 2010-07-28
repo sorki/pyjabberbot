@@ -146,9 +146,11 @@ class JabberBot(object):
 
         return self.conn
 
-    def join_room(self, room):
+    def join_room(self, room, username=None):
         """Join the specified multi-user chat room"""
-        my_room_JID = "%s/%s" % (room,self.__username)
+        if username is None:
+            username = self.__username.split('@')[0]
+        my_room_JID = '/'.join(room, username)
         self.connect().send(xmpp.Presence(to=my_room_JID))
 
     def quit( self):
