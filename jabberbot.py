@@ -438,12 +438,15 @@ class JabberBot(object):
             else:
                 description = 'Available commands:'
 
-            usage = '\n'.join(sorted(['%s: %s' % (name, (command.__doc__ or '(undocumented)').split('\n', 1)[0]) for (name, command) in self.commands.items() if name != 'help' and not command._jabberbot_hidden]))
+            usage = '\n'.join(sorted([
+                '%s: %s' % (name, (command.__doc__.strip() or '(undocumented)').split('\n', 1)[0])
+                for (name, command) in self.commands.iteritems() if name != 'help' and not command._jabberbot_hidden
+            ]))
             usage = usage + '\n\nType help <command name> to get more info about that specific command.'
         else:
             description = ''
             if args in self.commands:
-                usage = self.commands[args].__doc__ or 'undocumented'
+                usage = self.commands[args].__doc__.strip() or 'undocumented'
             else:
                 usage = 'That command is not defined.'
 
