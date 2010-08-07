@@ -28,6 +28,7 @@ except ImportError:
     print >>sys.stderr, 'You need to install xmpppy from http://xmpppy.sf.net/.'
     sys.exit(-1)
 import inspect
+import logging
 import traceback
 
 """A simple jabber/xmpp bot framework"""
@@ -60,7 +61,7 @@ class JabberBot(object):
 
     def __init__(self, username, password, res=None, debug=False):
         """Initializes the jabber bot and sets up commands."""
-        self.__debug = debug
+        self.log = logging.getLogger(__name__)
         self.__username = username
         self.__password = password
         self.jid = xmpp.JID(self.__username)
@@ -76,7 +77,7 @@ class JabberBot(object):
         for name, value in inspect.getmembers(self):
             if inspect.ismethod(value) and getattr(value, '_jabberbot_command', False):
                 name = getattr(value, '_jabberbot_command_name')
-                self.debug('Registered command: %s' % name)
+                self.log.debug('Registered command: %s' % name)
                 self.commands[name] = value
 
 ################################
@@ -106,13 +107,6 @@ class JabberBot(object):
 
 ################################
 
-    def debug(self, s):
-        if self.__debug: self.log(s)
-
-    def log( self, s):
-        """Logging facility, can be overridden in subclasses to log to file, etc.."""
-        print self.__class__.__name__, ':', s
-
     def connect( self):
         if not self.conn:
             if self.__debug:
@@ -122,27 +116,27 @@ class JabberBot(object):
 
             conres = conn.connect()
             if not conres:
-                self.log( 'unable to connect to server %s.' % self.jid.getDomain())
+                self.log.error('unable to connect to server %s.' % self.jid.getDomain())
                 return None
             if conres<>'tls':
-                self.log("Warning: unable to establish secure connection - TLS failed!")
+                self.log.warning('unable to establish secure connection - TLS failed!')
 
             authres = conn.auth(self.jid.getNode(), self.__password, self.res)
             if not authres:
-                self.log('unable to authorize with server.')
+                self.log.error('unable to authorize with server.')
                 return None
             if authres<>'sasl':
-                self.log("Warning: unable to perform SASL auth os %s. Old authentication method used!" % self.jid.getDomain())
+                self.log.warning("unable to perform SASL auth os %s. Old authentication method used!" % self.jid.getDomain())
 
             conn.RegisterHandler('message', self.callback_message)
             conn.RegisterHandler('presence', self.callback_presence)
             conn.sendInitPresence()
             self.conn = conn
             self.roster = self.conn.Roster.getRoster()
-            self.log('*** roster ***')
+            self.log.info('*** roster ***')
             for contact in self.roster.getItems():
-                self.log('  ' + str(contact))
-            self.log('*** roster ***')
+                self.log.info('  %s' % contact)
+            self.log.info('*** roster ***')
 
         return self.conn
 
@@ -311,9 +305,9 @@ class JabberBot(object):
             subscription = None
 
         if type_ == 'error':
-            self.log(presence.getError())
+            self.log.error(presence.getError())
 
-        self.debug('Got presence: %s (type: %s, show: %s, status: %s, subscription: %s)' % (jid, type_, show, status, subscription))
+        self.log.debug('Got presence: %s (type: %s, show: %s, status: %s, subscription: %s)' % (jid, type_, show, status, subscription))
 
         if type_ == 'subscribe':
             # Incoming presence subscription request
@@ -365,8 +359,8 @@ class JabberBot(object):
 
         # Ignore messages from users not seen by this bot
         if jid not in self.__seen:
-            self.log('Ignoring message from unseen guest: %s' % jid)
-            self.debug("I've seen: %s" % ["%s" % x for x in self.__seen.keys()])
+            self.log.info('Ignoring message from unseen guest: %s' % jid)
+            self.log.debug("I've seen: %s" % ["%s" % x for x in self.__seen.keys()])
             return
 
         # Remember the last-talked-in thread for replies
@@ -384,8 +378,7 @@ class JabberBot(object):
                 reply = self.commands[cmd](mess, args)
             except Exception, e:
                 reply = traceback.format_exc(e)
-                self.log('An error happened while processing a message ("%s") from %s: %s"' % (text, jid, reply))
-                print reply
+                self.log.exception('An error happened while processing a message ("%s") from %s: %s"' % (text, jid, reply))
         else:
             # In private chat, it's okay for the bot to always respond.
             # In group chat, the bot should silently ignore commands it
@@ -473,9 +466,9 @@ class JabberBot(object):
         """Connects to the server and handles messages."""
         conn = self.connect()
         if conn:
-            self.log('bot connected. serving forever.')
+            self.log.info('bot connected. serving forever.')
         else:
-            self.log('could not connect to server - aborting.')
+            self.log.warn('could not connect to server - aborting.')
             return
 
         if connect_callback:
@@ -486,7 +479,7 @@ class JabberBot(object):
                 conn.Process(1)
                 self.idle_proc()
             except KeyboardInterrupt:
-                self.log('bot stopped by user request. shutting down.')
+                self.log.info('bot stopped by user request. shutting down.')
                 break
 
         self.shutdown()
