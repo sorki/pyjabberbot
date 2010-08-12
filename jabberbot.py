@@ -128,8 +128,6 @@ class JabberBot(object):
             if authres<>'sasl':
                 self.log.warning("unable to perform SASL auth os %s. Old authentication method used!" % self.jid.getDomain())
 
-            conn.RegisterHandler('message', self.callback_message)
-            conn.RegisterHandler('presence', self.callback_presence)
             conn.sendInitPresence()
             self.conn = conn
             self.roster = self.conn.Roster.getRoster()
@@ -137,6 +135,8 @@ class JabberBot(object):
             for contact in self.roster.getItems():
                 self.log.info('  %s' % contact)
             self.log.info('*** roster ***')
+            self.conn.RegisterHandler('message', self.callback_message)
+            self.conn.RegisterHandler('presence', self.callback_presence)
 
         return self.conn
 
