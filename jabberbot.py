@@ -259,11 +259,11 @@ class JabberBot(object):
 
     def status_type_changed(self, jid, new_status_type):
         """Callback for tracking status types (available, away, offline, ...)"""
-        self.debug('user %s changed status to %s' % (jid, new_status_type))
+        self.log.debug('user %s changed status to %s' % (jid, new_status_type))
 
     def status_message_changed(self, jid, new_status_message):
         """Callback for tracking status messages (the free-form status text)"""
-        self.debug('user %s updated text to %s' % (jid, new_status_message))
+        self.log.debug('user %s updated text to %s' % (jid, new_status_message))
 
     def broadcast(self, message, only_available=False):
         """Broadcast a message to all users 'seen' by this bot.
@@ -339,14 +339,14 @@ class JabberBot(object):
         username = self.get_sender_username(mess)
 
         if type not in ("groupchat", "chat"):
-            self.debug("unhandled message type: %s" % type)
+            self.log.debug("unhandled message type: %s" % type)
             return
 
-        self.debug("*** props = %s" % props)
-        self.debug("*** jid = %s" % jid)
-        self.debug("*** username = %s" % username)
-        self.debug("*** type = %s" % type)
-        self.debug("*** text = %s" % text)
+        self.log.debug("*** props = %s" % props)
+        self.log.debug("*** jid = %s" % jid)
+        self.log.debug("*** username = %s" % username)
+        self.log.debug("*** type = %s" % type)
+        self.log.debug("*** text = %s" % text)
 
         # Ignore messages from before we joined
         if xmpp.NS_DELAY in props: return
@@ -371,7 +371,7 @@ class JabberBot(object):
         else:
             command, args = text, ''
         cmd = command.lower()
-        self.debug("*** cmd = %s" % cmd)
+        self.log.debug("*** cmd = %s" % cmd)
 
         if self.commands.has_key(cmd):
             try:
