@@ -1,7 +1,12 @@
 #!/usr/bin/python
 
-# JabberBot: A simple jabber/xmpp bot framework
+# pyjabberbot: Stripped down version of JabberBot, jabber/xmpp bot framework
 # Copyright (c) 2007-2010 Thomas Perl <thpinfo.com>
+# Copyright (c) 2010 Richard Marko <rissko@gmail.com>
+#
+# Based on original JabberBot by Thomas Perl
+# - repo: git://repo.or.cz/jabberbot.git
+# - homepage: http://thpinfo.com/2007/python-jabberbot/
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,11 +34,9 @@ import inspect
 import logging
 import traceback
 
-"""A simple jabber/xmpp bot framework"""
-
-__author__ = 'Thomas Perl <thp@thpinfo.com>'
-__version__ = '0.10'
-__website__ = 'http://thpinfo.com/2007/python-jabberbot/'
+__author__ = 'Richard Marko <rissko@gmail.com>'
+__version__ = '0.1'
+__website__ = 'http://github.com/sorki/pyjabberbot'
 __license__ = 'GPLv3 or later'
 
 def botcmd(*args, **kwargs):
@@ -443,5 +446,3 @@ class JabberBot(object):
 
         if disconnect_callback:
             disconnect_callback()
-
-
