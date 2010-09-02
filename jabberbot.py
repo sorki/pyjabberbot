@@ -109,11 +109,7 @@ class JabberBot(object):
 
     def connect( self):
         if not self.conn:
-            if self.__debug:
-                conn = xmpp.Client(self.jid.getDomain())
-            else:
-                conn = xmpp.Client(self.jid.getDomain(), debug = [])
-
+            conn = xmpp.Client(self.jid.getDomain(), debug = [])
             conres = conn.connect()
             if not conres:
                 self.log.error('unable to connect to server %s.' % self.jid.getDomain())
