@@ -30,13 +30,24 @@ DESCRIPTION = jabberbot.__doc__
 # Extract name and e-mail ("Firstname Lastname <mail@example.org>")
 AUTHOR, EMAIL = re.match(r'(.*) <(.*)>', jabberbot.__author__).groups()
 
+with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as fh:
+    LONG_DESCRIPTION = fh.read().strip()
+
 setup(name=PACKAGE,
       version=VERSION,
       description=DESCRIPTION,
+      long_decription=LONG_DESCRIPTION,
       author=AUTHOR,
       author_email=EMAIL,
       license=LICENSE,
       url=WEBSITE,
       py_modules=MODULES,
-      download_url=WEBSITE+PACKAGE+'-'+VERSION+'.tar.gz')
+      classifiers=['Development Status :: 4 - Beta',
+        'Environment :: Console',
+        'Intended Audience :: Developers',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'License :: OSI Approved :: GNU General Public License (GPL)',
+        'Topic :: Software Development'],
+      )
 

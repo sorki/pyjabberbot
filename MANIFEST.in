@@ -1,2 +1,2 @@
-include AUTHORS COPYING
+include AUTHORS COPYING README.rst
 include examples/*.py

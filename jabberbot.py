@@ -34,6 +34,8 @@ import inspect
 import logging
 import traceback
 
+""" Stripped down version of JabberBot, jabber/xmpp bot framework """
+
 __author__ = 'Richard Marko <rissko@gmail.com>'
 __version__ = '0.1'
 __website__ = 'http://github.com/sorki/pyjabberbot'
