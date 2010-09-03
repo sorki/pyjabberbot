@@ -24,6 +24,7 @@
 
 import re
 import sys
+import time
 
 try:
     import xmpp
@@ -245,7 +246,8 @@ class JabberBot(object):
         elif type_ == self.OFFLINE and jid in self.__seen:
             # Notify of user offline status change
             del self.__seen[jid]
-            self.status_type_changed(jid, self.OFFLINE)
+            if status_type_changed:
+                self.status_type_changed(jid, self.OFFLINE)
 
         try:
             subscription = self.roster.getSubscription(str(jid))
@@ -395,13 +397,20 @@ class JabberBot(object):
             try:
                 state = conn.Process(1)
                 if state == None:
-                    # IOError occurred, reconnect
+                    self.log.error('IOError occurred')
+                    time.sleep(2)
+                    self.log.info('trying to reconnect')
                     conn = self.connect()
                     continue
                 self.idle_proc()
             except KeyboardInterrupt:
                 self.log.info('bot stopped by user request. shutting down.')
                 break
+            except:
+                self.log.error('unexpected error: %s' % sys.exc_info()[0])
+                time.sleep(2)
+                self.log.info('trying to reconnect')
+                conn = self.connect()
 
         if disconnect_callback:
             disconnect_callback()
