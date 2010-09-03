@@ -152,13 +152,6 @@ class JabberBot(object):
             for (handler, callback) in handlers.iteritems():
                 self.conn.RegisterHandler(handler, callback)
 
-            '''
-            self.conn.RegisterHandler('message', 
-                self.callback_message)
-            self.conn.RegisterHandler('presence', 
-                self.callback_presence)
-            '''
-
         return self.conn
 
     def join_room(self, room, username=None):
