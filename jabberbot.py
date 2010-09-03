@@ -351,53 +351,29 @@ class JabberBot(object):
         """
         return None
 
-    def top_of_help_message(self):
-        """Returns a string that forms the top of the help message
-
-        Override this method in derived class if you
-        want to add additional help text at the
-        beginning of the help message.
-        """
-        return ""
-
-    def bottom_of_help_message(self):
-        """Returns a string that forms the bottom of the help message
-
-        Override this method in derived class if you
-        want to add additional help text at the end
-        of the help message.
-        """
-        return ""
-
     @botcmd
     def help(self, mess, args):
         """Returns a help string listing available options.
 
         Automatically assigned to the "help" command."""
-        if not args:
-            if self.__doc__:
-                description = self.__doc__.strip()
-            else:
-                description = 'Available commands:'
-
-            usage = '\n'.join(sorted([
-                '%s: %s' % (name, (command.__doc__.strip() or '(undocumented)').split('\n', 1)[0])
-                for (name, command) in self.commands.iteritems() if name != 'help' and not command._jabberbot_hidden
-            ]))
-            usage = usage + '\n\nType help <command name> to get more info about that specific command.'
+        if self.__doc__:
+            description = self.__doc__.strip()
         else:
-            description = ''
-            if args in self.commands:
-                usage = self.commands[args].__doc__.strip() or 'undocumented'
-            else:
-                usage = 'That command is not defined.'
+            description = 'Available commands:'
 
-        top    = self.top_of_help_message()
-        bottom = self.bottom_of_help_message()
-        if top   : top    = "%s\n\n" % top
-        if bottom: bottom = "\n\n%s" % bottom
+        cmdlist = []
+        for name, command in self.commands.iteritems():
+            if name == 'help' or command._jabberbot_hidden:
+                continue
 
-        return '%s%s\n\n%s%s' % (top, description, usage, bottom )
+            doc = ''
+            if command.__doc__:
+                doc = ': ' + command.__doc__.strip()
+            cmdlist.append('- %s %s' % (name, doc))
+
+        usage = '\n'.join(sorted(cmdlist))
+
+        return '%s%s' % (description, usage)
 
     def idle_proc(self):
         """This function will be called in the main loop."""
