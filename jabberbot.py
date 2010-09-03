@@ -393,7 +393,11 @@ class JabberBot(object):
 
         while not self.__finished:
             try:
-                conn.Process(1)
+                state = conn.Process(1)
+                if state == None:
+                    # IOError occurred, reconnect
+                    conn = self.connect()
+                    continue
                 self.idle_proc()
             except KeyboardInterrupt:
                 self.log.info('bot stopped by user request. shutting down.')
