@@ -357,9 +357,9 @@ class JabberBot(object):
 
         Automatically assigned to the "help" command."""
         if self.__doc__:
-            description = self.__doc__.strip()
-        else:
-            description = 'Available commands:'
+            description = '%s\n' % self.__doc__.strip()
+
+        description += 'Available commands:\n'
 
         cmdlist = []
         for name, command in self.commands.iteritems():
