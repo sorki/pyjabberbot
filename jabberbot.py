@@ -147,15 +147,7 @@ class JabberBot(object):
         self.connect().send(xmpp.Presence(to=my_room_JID))
 
     def quit(self):
-        """Stop serving messages and exit.
-
-        I find it is handy for development to run the
-        jabberbot in a 'while true' loop in the shell, so
-        whenever I make a code change to the bot, I send
-        the 'reload' command, which I have mapped to call
-        self.quit(), and my shell script relaunches the
-        new version.
-        """
+        """Stop serving messages and exit.  """
         self.__finished = True
 
     def send_message(self, mess):
@@ -219,14 +211,6 @@ class JabberBot(object):
             username = ""
         return username
 
-    def status_type_changed(self, jid, new_status_type):
-        """Callback for tracking status types (available, away, offline, ...)"""
-        self.log.debug('user %s changed status to %s' % (jid, new_status_type))
-
-    def status_message_changed(self, jid, new_status_message):
-        """Callback for tracking status messages (the free-form status text)"""
-        self.log.debug('user %s updated text to %s' % (jid, new_status_message))
-
     def broadcast(self, message, only_available=False):
         """Broadcast a message to all users 'seen' by this bot.
 
@@ -236,7 +220,8 @@ class JabberBot(object):
             if not only_available or show is self.AVAILABLE:
                 self.send(jid, message)
 
-    def callback_presence(self, conn, presence):
+    def callback_presence(self, conn, presence, 
+            status_type_changed = None, status_msg_changed = None):
         jid, type_, show, status = presence.getFrom(), \
                 presence.getType(), presence.getShow(), \
                 presence.getStatus()
@@ -249,10 +234,12 @@ class JabberBot(object):
             # Keep track of status message and type changes
             old_show, old_status = self.__seen.get(jid, (self.OFFLINE, None))
             if old_show != show:
-                self.status_type_changed(jid, show)
+                if status_type_changed:
+                    self.status_type_changed(jid, show)
 
             if old_status != status:
-                self.status_message_changed(jid, status)
+                if status_msg_changed:
+                    self.status_msg_changed(jid, status)
 
             self.__seen[jid] = (show, status)
         elif type_ == self.OFFLINE and jid in self.__seen:
