@@ -58,10 +58,12 @@ def botcmd(*args, **kwargs):
 
 
 class JabberBot(object):
-    AVAILABLE, AWAY, CHAT, DND, XA, OFFLINE = None, 'away', 'chat', 'dnd', 'xa', 'unavailable'
+    AVAILABLE, AWAY, CHAT = None, 'away', 'chat'
+    DND, XA, OFFLINE = 'dnd', 'xa', 'unavailable'
 
-    MSG_AUTHORIZE_ME = 'Hey there. You are not yet on my roster. Authorize my request and I will do the same.'
-    MSG_NOT_AUTHORIZED = 'You did not authorize my subscription request. Access denied.'
+    MSG_AUTHORIZE_ME = 'Please authorize me'
+    MSG_NOT_AUTHORIZED = ('You did not authorize my subscription'
+        ' request. Access denied.')
 
     def __init__(self, username, password, res=None, debug=False):
         """Initializes the jabber bot and sets up commands."""
@@ -79,15 +81,17 @@ class JabberBot(object):
 
         self.commands = {}
         for name, value in inspect.getmembers(self):
-            if inspect.ismethod(value) and getattr(value, '_jabberbot_command', False):
-                name = getattr(value, '_jabberbot_command_name')
-                self.log.debug('Registered command: %s' % name)
-                self.commands[name] = value
+            if (inspect.ismethod(value) and
+                getattr(value, '_jabberbot_command', False)):
+                    name = getattr(value, '_jabberbot_command_name')
+                    self.log.debug('Registered command: %s' % name)
+                    self.commands[name] = value
 
 ################################
 
     def _send_status(self):
-        self.conn.send(xmpp.dispatcher.Presence(show=self.__show, status=self.__status))
+        self.conn.send(xmpp.dispatcher.Presence(show=self.__show,
+            status=self.__status))
 
     def __set_status(self, value):
         if self.__status != value:
@@ -111,22 +115,27 @@ class JabberBot(object):
 
 ################################
 
-    def connect(self):
+    def connect(self, handlers = None):
         if not self.conn:
             conn = xmpp.Client(self.jid.getDomain(), debug = [])
             conres = conn.connect()
             if not conres:
-                self.log.error('unable to connect to server %s.' % self.jid.getDomain())
+                self.log.error('unable to connect to server %s.'
+                    % self.jid.getDomain())
                 return None
             if conres<>'tls':
-                self.log.warning('unable to establish secure connection - TLS failed!')
+                self.log.warning('unable to establish secure connection'
+                    ' - TLS failed!')
 
-            authres = conn.auth(self.jid.getNode(), self.__password, self.res)
+            authres = conn.auth(self.jid.getNode(), self.__password,
+                self.res)
             if not authres:
                 self.log.error('unable to authorize with server.')
                 return None
             if authres<>'sasl':
-                self.log.warning("unable to perform SASL auth os %s. Old authentication method used!" % self.jid.getDomain())
+                self.log.warning('unable to perform SASL auth on %s.'
+                    % self.jid.getDomain())
+                self.log.warning('old authentication method used')
 
             conn.sendInitPresence()
             self.conn = conn
@@ -135,8 +144,20 @@ class JabberBot(object):
             for contact in self.roster.getItems():
                 self.log.info('  %s' % contact)
             self.log.info('*** roster ***')
-            self.conn.RegisterHandler('message', self.callback_message)
-            self.conn.RegisterHandler('presence', self.callback_presence)
+
+            if handlers is None:
+                handlers = {'message': self.callback_message,
+                    'presence': self.callback_presence}
+
+            for (handler, callback) in handlers.iteritems():
+                self.conn.RegisterHandler(handler, callback)
+
+            '''
+            self.conn.RegisterHandler('message', 
+                self.callback_message)
+            self.conn.RegisterHandler('presence', 
+                self.callback_presence)
+            '''
 
         return self.conn
 
@@ -258,7 +279,9 @@ class JabberBot(object):
         if type_ == 'error':
             self.log.error(presence.getError())
 
-        self.log.debug('Got presence: %s (type: %s, show: %s, status: %s, subscription: %s)' % (jid, type_, show, status, subscription))
+        self.log.debug('got presence: %s (type: %s, show: %s, '
+            'status: %s, subscription: %s)' %
+            (jid, type_, show, status, subscription))
 
         if type_ == 'subscribe':
             # Incoming presence subscription request
