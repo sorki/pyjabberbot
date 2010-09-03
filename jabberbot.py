@@ -416,14 +416,6 @@ class JabberBot(object):
         """This function will be called in the main loop."""
         pass
 
-    def shutdown(self):
-        """This function will be called when we're done serving
-
-        Override this method in derived class if you
-        want to do anything special at shutdown.
-        """
-        pass
-
     def serve_forever(self, connect_callback = None, disconnect_callback = None):
         """Connects to the server and handles messages."""
         conn = self.connect()
@@ -443,8 +435,6 @@ class JabberBot(object):
             except KeyboardInterrupt:
                 self.log.info('bot stopped by user request. shutting down.')
                 break
-
-        self.shutdown()
 
         if disconnect_callback:
             disconnect_callback()
