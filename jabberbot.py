@@ -110,7 +110,7 @@ class JabberBot(object):
 
 ################################
 
-    def connect( self):
+    def connect(self):
         if not self.conn:
             conn = xmpp.Client(self.jid.getDomain(), debug = [])
             conres = conn.connect()
@@ -146,7 +146,7 @@ class JabberBot(object):
         my_room_JID = '/'.join((room, username))
         self.connect().send(xmpp.Presence(to=my_room_JID))
 
-    def quit( self):
+    def quit(self):
         """Stop serving messages and exit.
 
         I find it is handy for development to run the
@@ -178,7 +178,7 @@ class JabberBot(object):
 
     def send_simple_reply(self, mess, text, private=False):
         """Send a simple response to a message"""
-        self.send_message( self.build_reply(mess,text, private) )
+        self.send_message(self.build_reply(mess,text, private) )
 
     def build_reply(self, mess, text=None, private=False):
         """Build a message for responding to another message.  Message is NOT sent"""
@@ -290,7 +290,7 @@ class JabberBot(object):
             self.send(jid, self.MSG_NOT_AUTHORIZED)
             self.roster.Unauthorize(jid)
 
-    def callback_message( self, conn, mess):
+    def callback_message(self, conn, mess):
         """Messages sent to the bot will arrive here. Command handling + routing is done in this function."""
 
         # Prepare to handle either private chats or group chats
@@ -347,7 +347,7 @@ class JabberBot(object):
             # doesn't understand or aren't handled by unknown_command().
             default_reply = 'Unknown command: "%s". Type "help" for available commands.<b>blubb!</b>' % cmd
             if type == "groupchat": default_reply = None
-            reply = self.unknown_command( mess, cmd, args)
+            reply = self.unknown_command(mess, cmd, args)
             if reply is None:
                 reply = default_reply
         if reply:
@@ -410,9 +410,9 @@ class JabberBot(object):
         if top   : top    = "%s\n\n" % top
         if bottom: bottom = "\n\n%s" % bottom
 
-        return '%s%s\n\n%s%s' % ( top, description, usage, bottom )
+        return '%s%s\n\n%s%s' % (top, description, usage, bottom )
 
-    def idle_proc( self):
+    def idle_proc(self):
         """This function will be called in the main loop."""
         pass
 
@@ -424,7 +424,7 @@ class JabberBot(object):
         """
         pass
 
-    def serve_forever( self, connect_callback = None, disconnect_callback = None):
+    def serve_forever(self, connect_callback = None, disconnect_callback = None):
         """Connects to the server and handles messages."""
         conn = self.connect()
         if conn:
