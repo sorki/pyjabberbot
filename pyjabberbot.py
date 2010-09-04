@@ -64,7 +64,7 @@ class JabberBot(object):
     MSG_NOT_AUTHORIZED = ('You did not authorize my subscription'
         ' request. Access denied.')
 
-    def __init__(self, username, password, res=None, debug=False):
+    def __init__(self, username, password, res=None):
         """Initializes the jabber bot and sets up commands."""
         self.__username = username
         self.__password = password
