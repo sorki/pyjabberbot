@@ -353,25 +353,12 @@ class JabberBot(object):
                 self.log.debug('Exception while processing msg'
                     '("%s") from %s: %s"' % (text, jid, reply))
         else:
-            default_reply = ('Unknown command: "%s". Type "help"'
+            if typ == "groupchat":
+                return
+            reply = ('Unknown command: "%s". Type "help"'
                 ' for available commands' % cmd)
-            if typ == "groupchat": default_reply = None
-            reply = self.unknown_command(msg, cmd, args)
-            if reply is None:
-                reply = default_reply
         if reply:
             self.send_simple_reply(msg, reply)
-
-    def unknown_command(self, mess, cmd, args):
-        """Default handler for unknown commands
-
-        Override this method in derived class if you
-        want to trap some unrecognized commands.  If
-        'cmd' is handled, you must return some non-false
-        value, else some helpful text will be sent back
-        to the sender.
-        """
-        return None
 
     @botcmd
     def help(self, msg, args):
