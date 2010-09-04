@@ -396,10 +396,6 @@ class JabberBot(object):
         usage = '\n'.join(sorted(cmdlist))
         return '%s%s' % (description, usage)
 
-    def idle_proc(self):
-        """This function will be called in the main loop."""
-        pass
-
     def serve_forever(self, connect_callback = None,
             disconnect_callback = None):
         """Connects to the server and handles messages."""
@@ -422,7 +418,6 @@ class JabberBot(object):
                     self.log.info('trying to reconnect')
                     conn = self.connect()
                     continue
-                self.idle_proc()
             except KeyboardInterrupt:
                 self.log.info('stopping by user request')
                 break
