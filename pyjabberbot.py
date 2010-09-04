@@ -196,8 +196,8 @@ class JabberBot(object):
                     + text.encode('utf-8') + "</body>"))
                 msg.addChild(node=html)
             except:
-                logging.error('exception building a message (%s): %s'
-                    % (text, sys.exc_info()[0]))
+                logging.error('exception: build_message (%s): %s' %
+                    (text, sys.exc_info()[0]))
                 msg = xmpp.protocol.Message(body=text_plain)
         return msg
 
@@ -300,17 +300,16 @@ class JabberBot(object):
             (text, jid, typ, username, props))
 
         if self.ignore_offline:
-            if xmpp.NS_DELAY in props: return
+            if xmpp.NS_DELAY in props:
+                return
 
-        # Ignore messages from myself
-        if username == self.__username: return
-
-        # If a message format is not supported (eg. encrypted)
-        if not text: return
+        # Ignore messages from myself + empty (e.g. encrypted) text
+        if username == self.__username or not text:
+            return
 
         # Ignore messages from users not seen by this bot
         if jid not in self.__seen:
-            self.log.info('Ignoring message from unseen guest: %s' %
+            self.log.info('ignoring message from unseen guest: %s' %
                 jid)
             return
 
@@ -327,9 +326,9 @@ class JabberBot(object):
         if self.commands.has_key(cmd):
             try:
                 reply = self.commands[cmd](msg, args)
-            except Exception, e:
-                reply = traceback.format_exc(e)
-                self.log.debug('Exception while processing msg'
+            except Exception, ex:
+                reply = traceback.format_exc(ex)
+                self.log.debug('exception while processing msg'
                     '("%s") from %s: %s"' % (text, jid, reply))
         else:
             if typ == "groupchat":
