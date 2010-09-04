@@ -68,12 +68,13 @@ class JabberBot(object):
     def __init__(self, username, password, res=None, debug=False):
         """Initializes the jabber bot and sets up commands."""
         self.log = logging.getLogger(__name__)
-        self.__username = username
-        self.__password = password
         self.jid = xmpp.JID(self.__username)
         self.res = (res or self.__class__.__name__)
         self.conn = None
         self.roster = None
+        self.ignore_offline = False
+        self.__username = username
+        self.__password = password
         self.__finished = False
         self.__show = None
         self.__status = None
@@ -318,9 +319,8 @@ class JabberBot(object):
             'username: %s, properties: %s)' %
             (text, jid, typ, username, props))
 
-        # Ignore messages from before we joined
-        # TODO (major): ^^ !
-        if xmpp.NS_DELAY in props: return
+        self.ignore_offline:
+            if xmpp.NS_DELAY in props: return
 
         # Ignore messages from myself
         if username == self.__username: return
