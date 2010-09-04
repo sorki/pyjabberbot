@@ -56,7 +56,6 @@ def botcmd(*args, **kwargs):
     else:
         return lambda func: decorate(func, **kwargs)
 
-
 class JabberBot(object):
     AVAILABLE, AWAY, CHAT = None, 'away', 'chat'
     DND, XA, OFFLINE = 'dnd', 'xa', 'unavailable'
@@ -91,8 +90,6 @@ class JabberBot(object):
                 self.log.debug('Registered command: %s' % name)
                 self.commands[name] = value
 
-################################
-
     def _send_status(self):
         self.conn.send(xmpp.dispatcher.Presence(show=self.__show,
             status=self.__status))
@@ -116,8 +113,6 @@ class JabberBot(object):
         return self.__show
 
     status_type = property(fget=__get_show, fset=__set_show)
-
-################################
 
     def connect(self, handlers = None):
         if not self.conn:
@@ -310,7 +305,6 @@ class JabberBot(object):
         jid, typ, props, text = (msg.getFrom(), msg.getType(),
             msg.getProperties(), msg.getBody())
         username = self.get_sender_username(msg)
-
 
         if typ not in ("groupchat", "chat"):
             self.log.debug("unhandled message type: %s" % type)
