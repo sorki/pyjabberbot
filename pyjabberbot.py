@@ -238,18 +238,18 @@ class JabberBot(object):
                 (self.OFFLINE, None))
             if old_show != show:
                 if status_type_changed:
-                    self.status_type_changed(jid, show)
+                    status_type_changed(jid, show)
 
             if old_status != status:
                 if status_msg_changed:
-                    self.status_msg_changed(jid, status)
+                    status_msg_changed(jid, status)
 
             self.__seen[jid] = (show, status)
         elif typ == self.OFFLINE and jid in self.__seen:
             # Notify of user offline status change
             del self.__seen[jid]
             if status_type_changed:
-                self.status_type_changed(jid, self.OFFLINE)
+                status_type_changed(jid, self.OFFLINE)
 
         try:
             subscription = self.roster.getSubscription(str(jid))
