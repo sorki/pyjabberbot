@@ -277,7 +277,7 @@ class JabberBot(object):
             subscription = None
 
         if typ == 'error':
-            self.log.error(presence.getError())
+            self.log.error(pre.getError())
 
         self.log.debug('got presence: %s (type: %s, show: %s, '
             'status: %s, subscription: %s)' %
@@ -319,7 +319,7 @@ class JabberBot(object):
             'username: %s, properties: %s)' %
             (text, jid, typ, username, props))
 
-        self.ignore_offline:
+        if self.ignore_offline:
             if xmpp.NS_DELAY in props: return
 
         # Ignore messages from myself
