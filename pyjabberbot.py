@@ -383,6 +383,8 @@ class JabberBot(object):
                     self.log.info('trying to reconnect')
                     conn = self.connect()
                     continue
+                if hasattr(self, 'idle_proc'):
+                    self.idle_proc()
             except KeyboardInterrupt:
                 self.log.info('stopping by user request')
                 break
