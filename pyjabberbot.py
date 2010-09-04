@@ -67,12 +67,6 @@ class JabberBot(object):
 
     def __init__(self, username, password, res=None, debug=False):
         """Initializes the jabber bot and sets up commands."""
-        self.log = logging.getLogger(__name__)
-        self.jid = xmpp.JID(self.__username)
-        self.res = (res or self.__class__.__name__)
-        self.conn = None
-        self.roster = None
-        self.ignore_offline = False
         self.__username = username
         self.__password = password
         self.__finished = False
@@ -81,7 +75,14 @@ class JabberBot(object):
         self.__seen = {}
         self.__threads = {}
 
+        self.log = logging.getLogger(__name__)
+        self.jid = xmpp.JID(self.__username)
+        self.res = (res or self.__class__.__name__)
+        self.conn = None
+        self.roster = None
         self.commands = {}
+        self.ignore_offline = False
+
         for name, value in inspect.getmembers(self):
             if (inspect.ismethod(value) and
                 getattr(value, '_jabberbot_command', False)):
