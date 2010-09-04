@@ -169,44 +169,44 @@ class JabberBot(object):
         """Stop serving messages and exit.  """
         self.__finished = True
 
-    def send_message(self, mess):
+    def send_message(self, msg):
         """Send an XMPP message"""
-        self.connect().send(mess)
+        self.connect().send(msg)
 
-    def send(self, user, text, in_reply_to=None, message_type='chat'):
+    def send(self, user, text, in_reply_to=None, msg_type='chat'):
         """Sends a simple message to the specified user."""
-        mess = self.build_message(text)
-        mess.setTo(user)
+        msg = self.build_message(text)
+        msg.setTo(user)
 
         if in_reply_to:
-            mess.setThread(in_reply_to.getThread())
-            mess.setType(in_reply_to.getType())
+            msg.setThread(in_reply_to.getThread())
+            msg.setType(in_reply_to.getType())
         else:
-            mess.setThread(self.__threads.get(user, None))
-            mess.setType(message_type)
+            msg.setThread(self.__threads.get(user, None))
+            msg.setType(msg_type)
 
-        self.send_message(mess)
+        self.send_message(msg)
 
     def send_simple_reply(self, msg, text, private=False):
         """Send a simple response to a message"""
         self.send_message(self.build_reply(msg, text, private) )
 
-    def build_reply(self, mess, text=None, private=False):
+    def build_reply(self, msg, text=None, private=False):
         """Build a message for responding to another message."""
         response = self.build_message(text)
         if private:
-            response.setTo(mess.getFrom())
+            response.setTo(msg.getFrom())
             response.setType('chat')
         else:
-            response.setTo(mess.getFrom().getStripped())
-            response.setType(mess.getType())
-        response.setThread(mess.getThread())
+            response.setTo(msg.getFrom().getStripped())
+            response.setType(msg.getType())
+        response.setThread(msg.getThread())
         return response
 
     def build_message(self, text):
         """Builds an xhtml message without attributes."""
         text_plain = re.sub(r'<[^>]+>', '', text)
-        message = xmpp.protocol.Message(body=text_plain)
+        msg = xmpp.protocol.Message(body=text_plain)
         if text_plain != text:
             html = xmpp.Node('html', {'xmlns':
                 'http://jabber.org/protocol/xhtml-im'})
@@ -214,33 +214,33 @@ class JabberBot(object):
                 html.addChild(node=xmpp.simplexml.XML2Node(
                     "<body xmlns='http://www.w3.org/1999/xhtml'>"
                     + text.encode('utf-8') + "</body>"))
-                message.addChild(node=html)
+                msg.addChild(node=html)
             except Exception, e:
                 logging.error('exception building a message (%s): %s'
                     % (text, e))
-                message = xmpp.protocol.Message(body=text_plain)
-        return message
+                msg = xmpp.protocol.Message(body=text_plain)
+        return msg
 
-    def get_sender_username(self, mess):
+    def get_sender_username(self, msg):
         """Extract the sender's user name from a message""" 
-        type = mess.getType()
-        jid  = mess.getFrom()
-        if type == "groupchat":
+        typ = msg.getType()
+        jid  = msg.getFrom()
+        if typ == "groupchat":
             username = jid.getResource()
-        elif type == "chat":
+        elif typ == "chat":
             username  = jid.getNode()
         else:
             username = ""
         return username
 
-    def broadcast(self, message, only_available=False):
+    def broadcast(self, msg, only_available=False):
         """Broadcast a message to all users 'seen' by this bot.
 
         If the parameter 'only_available' is True, the broadcast
         will not go to users whose status is not 'Available'."""
         for jid, (show, status) in self.__seen.items():
             if not only_available or show is self.AVAILABLE:
-                self.send(jid, message)
+                self.send(jid, msg)
 
     def callback_presence(self, conn, pre,
             status_type_changed = None, status_msg_changed = None):
@@ -374,7 +374,7 @@ class JabberBot(object):
         return None
 
     @botcmd
-    def help(self, mess, args):
+    def help(self, msg, args):
         """Returns a help string listing available options.
 
         Automatically assigned to the "help" command."""
@@ -394,7 +394,6 @@ class JabberBot(object):
             cmdlist.append('- %s %s' % (name, doc))
 
         usage = '\n'.join(sorted(cmdlist))
-
         return '%s%s' % (description, usage)
 
     def idle_proc(self):
