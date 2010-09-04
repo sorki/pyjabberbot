@@ -218,8 +218,8 @@ class JabberBot(object):
 
         If the parameter 'only_available' is True, the broadcast
         will not go to users whose status is not 'Available'."""
-        for jid, (show, status) in self.__seen.items():
-            if not only_available or show is self.AVAILABLE:
+        for jid, status in self.__seen.items():
+            if not only_available or status[0] is self.AVAILABLE:
                 self.send(jid, msg)
 
     def callback_presence(self, conn, pre,
@@ -253,7 +253,7 @@ class JabberBot(object):
 
         try:
             subscription = self.roster.getSubscription(str(jid))
-        except KeyError, ke:
+        except KeyError:
             # User not on our roster
             subscription = None
 
