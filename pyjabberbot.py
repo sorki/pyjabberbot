@@ -69,7 +69,6 @@ class JabberBot(object):
         self.__username = username
         self.__password = password
         self.__finished = False
-        self.__show = None
         self.__status = None
         self.__seen = {}
         self.__threads = {}
@@ -90,29 +89,15 @@ class JabberBot(object):
                 self.log.debug('Registered command: %s' % name)
                 self.commands[name] = value
 
-    def _send_status(self):
-        self.conn.send(xmpp.dispatcher.Presence(show=self.__show,
-            status=self.__status))
-
-    def __set_status(self, value):
-        if self.__status != value:
-            self.__status = value
-            self._send_status()
-
-    def __get_status(self):
+    @property
+    def status(self):
         return self.__status
 
-    status_message = property(fget=__get_status, fset=__set_status)
-
-    def __set_show(self, value):
-        if self.__show != value:
-            self.__show = value
-            self._send_status()
-
-    def __get_show(self):
-        return self.__show
-
-    status_type = property(fget=__get_show, fset=__set_show)
+    @status.setter
+    def status(self, value):
+        self.__status = value
+        self.conn.send(xmpp.dispatcher.Presence(
+            show=self.__status[0], status=self.__status[1]))
 
     def connect(self, handlers = None):
         if not self.conn:
