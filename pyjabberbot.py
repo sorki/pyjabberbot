@@ -195,9 +195,9 @@ class JabberBot(object):
                     "<body xmlns='http://www.w3.org/1999/xhtml'>"
                     + text.encode('utf-8') + "</body>"))
                 msg.addChild(node=html)
-            except Exception, e:
+            except:
                 logging.error('exception building a message (%s): %s'
-                    % (text, e))
+                    % (text, sys.exc_info()[0]))
                 msg = xmpp.protocol.Message(body=text_plain)
         return msg
 
