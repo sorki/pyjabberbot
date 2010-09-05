@@ -390,7 +390,7 @@ class JabberBot(object):
                 break
             except:
                 self.log.error('unexpected error: %s' %
-                    sys.exc_info()[0])
+                    traceback.format_exc())
                 time.sleep(2)
                 self.log.info('trying to reconnect')
                 conn = self.connect()
