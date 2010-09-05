@@ -5,7 +5,7 @@ import logging
 import threading
 
 
-from pyjabberbot import SimpleBot, botcmd
+from pyjabberbot import SimpleBot
 
 class PersistentJabberBot(SimpleBot):
     """PersistentBot - SimpleBot + connection monitoring, reconnects after 
