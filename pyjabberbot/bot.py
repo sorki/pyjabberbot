@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 # pyjabberbot: Stripped down version of JabberBot, jabber/xmpp bot framework
 # Copyright (c) 2007-2010 Thomas Perl <thpinfo.com>
 # Copyright (c) 2010 Richard Marko <rissko@gmail.com>
@@ -21,7 +19,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-""" Stripped down version of JabberBot, jabber/xmpp bot framework """
 
 import re
 import sys
@@ -36,25 +33,7 @@ import inspect
 import logging
 import traceback
 
-
-__author__ = 'Richard Marko <rissko@gmail.com>'
-__version__ = '0.1'
-__website__ = 'http://github.com/sorki/pyjabberbot'
-__license__ = 'GPLv3 or later'
-
-def botcmd(*args, **kwargs):
-    """Decorator for bot command functions"""
-
-    def decorate(func, hidden=False, name=None):
-        setattr(func, '_jabberbot_command', True)
-        setattr(func, '_jabberbot_hidden', hidden)
-        setattr(func, '_jabberbot_command_name', name or func.__name__)
-        return func
-
-    if len(args):
-        return decorate(args[0], **kwargs)
-    else:
-        return lambda func: decorate(func, **kwargs)
+from pyjabberbot import botcmd
 
 class JabberBot(object):
     AVAILABLE, AWAY, CHAT = None, 'away', 'chat'

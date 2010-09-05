@@ -1,39 +1,41 @@
 #!/usr/bin/env python
-# Setup script for python-jabberbot
-# by Thomas Perl <thpinfo.com>
-
-from distutils.core import setup
 
 import os
-import re
-import sys
+from distutils.core import setup
 
-# Make sure that we import the local jabberbot module
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import pyjabberbot
+NAME = 'pyjabberbot'
+VERSION = '0.2'
+WEBSITE = 'http://github.com/sorki/pyjabberbot'
+LICENSE = 'GPLv3 or later'
+DESCRIPTION = 'Pyjabberbot, powerful xmpp bot implementation'
 
-
-# How is the package going to be called?
-PACKAGE = 'pyjabberbot'
-
-# List the modules that need to be installed/packaged
-MODULES = (
-        'pyjabberbot',
-)
-
-# These metadata fields are simply taken from the Jabberbot module
-VERSION = pyjabberbot.__version__
-WEBSITE = pyjabberbot.__website__
-LICENSE = pyjabberbot.__license__
-DESCRIPTION = pyjabberbot.__doc__
-
-# Extract name and e-mail ("Firstname Lastname <mail@example.org>")
-AUTHOR, EMAIL = re.match(r'(.*) <(.*)>', pyjabberbot.__author__).groups()
+AUTHOR = 'Richard Marko'
+EMAIL = 'rissko@gmail.com'
 
 with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as fh:
     LONG_DESCRIPTION = fh.read().strip()
 
-setup(name=PACKAGE,
+packages, data_files = [], []
+root_dir = os.path.dirname(__file__)
+if root_dir:
+    os.chdir(root_dir)
+
+for dirpath, dirnames, filenames in os.walk('pyjabberbot'):
+    # Ignore dirnames that start with '.'
+    for i, dirname in enumerate(dirnames):
+        if dirname.startswith('.'): del dirnames[i]
+    if '__init__.py' in filenames:
+        pkg = dirpath.replace(os.path.sep, '.')
+        if os.path.altsep:
+            pkg = pkg.replace(os.path.altsep, '.')
+        packages.append(pkg)
+    elif filenames:
+        prefix = dirpath[12:] # Strip "pyjabberbot/" or "pyjabberbot\"
+        for f in filenames:
+            data_files.append(os.path.join(prefix, f))
+
+
+setup(name=NAME,
       version=VERSION,
       description=DESCRIPTION,
       long_decription=LONG_DESCRIPTION,
@@ -41,7 +43,9 @@ setup(name=PACKAGE,
       author_email=EMAIL,
       license=LICENSE,
       url=WEBSITE,
-      py_modules=MODULES,
+      package_dir={'pyjabberbot': 'pyjabberbot'},
+      packages=packages,
+      package_data={'pyjabberbot': data_files},
       classifiers=['Development Status :: 4 - Beta',
         'Environment :: Console',
         'Intended Audience :: Developers',
@@ -50,4 +54,3 @@ setup(name=PACKAGE,
         'License :: OSI Approved :: GNU General Public License (GPL)',
         'Topic :: Software Development'],
       )
-
