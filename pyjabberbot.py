@@ -144,6 +144,12 @@ class JabberBot(object):
         self.roster = None
         self.log.debug('reconnecting')
         self.connect()
+        if self.conn:
+            self.log.info('bot reconnected')
+        else:
+            self.log.warn('reconnect failed, retrying in 5 seconds')
+            time.sleep(5)
+            self.reconnect()
 
     def join_room(self, room, username=None):
         """Join the specified multi-user chat room"""
