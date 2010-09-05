@@ -15,7 +15,7 @@ class PersistentJabberBot(SimpleBot):
 
         self.alive_running = True
         self.alive_paused = False
-        self.alive_thread = threading.Thread(target=self.alive_proc)
+        self.alive_thread = None
         self.syn = True
         self.ack = True
         self.syn_interval = 2
@@ -23,6 +23,7 @@ class PersistentJabberBot(SimpleBot):
         self.timeouts = 0
         self.incident = False
 
+        self.debug_heartbeat = False
 
         self.reconnects = 0
 
@@ -36,7 +37,8 @@ class PersistentJabberBot(SimpleBot):
         while self.alive_running:
             self.syn = True
             if self.ack == False:
-                logging.debug('| !!! timeout')
+                if self.debug_heartbeat:
+                    logging.debug('| !!! timeout')
                 self.timeouts += 1
                 if self.timeouts == self.threshold:
                     self.incident = True
@@ -63,15 +65,22 @@ class PersistentJabberBot(SimpleBot):
             self.alive_paused = False
 
         if self.syn:
-            logging.debug('| syn')
+            if self.debug_heartbeat:
+                logging.debug('| syn')
             self.send(self.jid, 'syn')
             self.syn = False
+
+        if self.alive_thread is None:
+            self.alive_thread = threading.Thread(
+                target = self.alive_proc)
+            self.alive_thread.start()
 
     def callback_message(self, conn, msg):
         jid = msg.getFrom().getStripped()
         txt = msg.getBody()
         if  jid == self.jid and txt == 'syn':
-            logging.debug('| ^^^ ack')
+            if self.debug_heartbeat:
+                logging.debug('| ^^^ ack')
             self.ack = True
             return
 
