@@ -27,11 +27,6 @@ class PersistentJabberBot(SimpleBot):
 
         self.reconnects = 0
 
-    @botcmd
-    def reconnects(self, msg, args):
-        """Number of reconnects ocurred"""
-        return 'Reconnects: %s' % self.reconnects
-
     def alive_proc(self):
         time.sleep(self.syn_interval)
         while self.alive_running:
