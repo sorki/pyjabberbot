@@ -7,7 +7,7 @@ straightforward and quick.
 pyjabberbot is a fork of `python-jabberbot <http://thpinfo.com/2007/python-jabberbot/>`_
 with focus on overall stability and availability of the bot.
 
-Feautures:
+Features:
 -----------
  - fault tolerance
  - connection monitoring, auto-reconnect
