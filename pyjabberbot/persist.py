@@ -18,7 +18,7 @@ class PersistentJabberBot(SimpleBot):
         self.alive_thread = None
         self.syn = True
         self.ack = True
-        self.syn_interval = 2
+        self.syn_interval = 10
         self.threshold = 3
         self.timeouts = 0
         self.incident = False
