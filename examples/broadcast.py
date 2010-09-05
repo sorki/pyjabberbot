@@ -24,19 +24,22 @@
 # from other threads or processes, too.
 #
 
-from jabberbot import JabberBot, botcmd
-
-import threading
+import sys
 import time 
+import threading
 
-# Fill in the JID + Password of your JabberBot here...
-(JID, PASSWORD) = ('my-jabber-id@jabberserver.example.org','my-password')
+from pyjabberbot import SimpleBot, botcmd
 
-class BroadcastingJabberBot(JabberBot):
-    """This is a simple broadcasting client. Use "subscribe" to subscribe to broadcasts, "unsubscribe" to unsubscribe and "broadcast" + message to send out a broadcast message. Automatic messages will be sent out all 60 seconds."""
+class BroadcastingBot(SimpleBot):
+    """ This is a simple broadcasting client.
+    Use "subscribe" to subscribe to broadcasts,
+    "unsubscribe" to unsubscribe and
+    "broadcast" + message to send out a broadcast message.
+    Automatic messages will be sent out all 60 seconds.
+    """
 
     def __init__(self, jid, password, res = None):
-        super(BroadcastingJabberBot, self).__init__(jid, password, res)
+        super(BroadcastingBot, self).__init__(jid, password, res)
 
         self.users = []
         self.message_queue = []
@@ -61,13 +64,13 @@ class BroadcastingJabberBot(JabberBot):
         else:
             self.users.remove(user)
             return 'You are now unsubscribed.'
-    
-    # You can use the "hidden" parameter to hide the
-    # command from JabberBot's 'help' list
-    @botcmd(hidden=True)
+
+    @botcmd
     def broadcast(self, mess, args):
-        """Sends out a broadcast, supply message as arguments (e.g. broadcast hello)"""
-        self.message_queue.append('broadcast: %s (from %s)' % (args, str(mess.getFrom()), ))
+        """Sends out a broadcast, 
+            supply message as arguments (e.g. broadcast hello)"""
+        self.message_queue.append('broadcast: %s (from %s)' %
+            (args, str(mess.getFrom()), ))
 
     def idle_proc(self):
         if not len(self.message_queue):
@@ -83,16 +86,21 @@ class BroadcastingJabberBot(JabberBot):
 
     def thread_proc(self):
         while not self.thread_killed:
-            self.message_queue.append('this is an automatic message, sent all 60 seconds :)')
+            self.message_queue.append('this is an automatic message,'
+                ' sent all 60 seconds')
             for i in range(60):
                 time.sleep(1)
                 if self.thread_killed:
                     return
 
+if __name__ == '__main__':
+    if len(sys.argv) < 3:
+        print 'Usage: %s login@host password' % sys.argv[0]
+        sys.exit(1)
 
-bc = BroadcastingJabberBot(JID, PASSWORD)
+    bot = BroadcastingBot(sys.argv[1], sys.argv[2])
 
-th = threading.Thread(target = bc.thread_proc)
-bc.serve_forever(connect_callback = lambda: th.start())
-bc.thread_killed = True
+    thread = threading.Thread(target = bot.thread_proc)
+    bot.serve_forever(connect_callback = lambda: thread.start())
+    bot.thread_killed = True
 
