@@ -138,6 +138,13 @@ class JabberBot(object):
 
         return self.conn
 
+    def reconnect(self):
+        """Try to reconnect"""
+        self.conn = None
+        self.roster = None
+        self.log.debug('reconnecting')
+        self.connect()
+
     def join_room(self, room, username=None):
         """Join the specified multi-user chat room"""
         if username is None:
@@ -196,7 +203,7 @@ class JabberBot(object):
                     + text.encode('utf-8') + "</body>"))
                 msg.addChild(node=html)
             except:
-                logging.error('exception: build_message (%s): %s' %
+                self.log.error('exception: build_message (%s): %s' %
                     (text, sys.exc_info()[0]))
                 msg = xmpp.protocol.Message(body=text_plain)
         return msg
@@ -364,8 +371,8 @@ class JabberBot(object):
     def serve_forever(self, connect_callback = None,
             disconnect_callback = None):
         """Connects to the server and handles messages."""
-        conn = self.connect()
-        if conn:
+        self.connect()
+        if self.conn:
             self.log.info('bot connected. serving forever.')
         else:
             self.log.warn('could not connect to server - aborting.')
@@ -376,12 +383,12 @@ class JabberBot(object):
 
         while not self.__finished:
             try:
-                state = conn.Process(1)
+                state = self.conn.Process(1)
                 if state == None:
                     self.log.error('IOError occurred')
                     time.sleep(2)
                     self.log.info('trying to reconnect')
-                    conn = self.connect()
+                    conn = self.reconnect()
                     continue
                 if hasattr(self, 'idle_proc'):
                     self.idle_proc()
@@ -393,7 +400,7 @@ class JabberBot(object):
                     traceback.format_exc())
                 time.sleep(2)
                 self.log.info('trying to reconnect')
-                conn = self.connect()
+                conn = self.reconnect()
 
         if disconnect_callback:
             disconnect_callback()
