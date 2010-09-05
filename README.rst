@@ -1,10 +1,38 @@
 pyjabberbot
 ============
 
-Stripped down version of `python-jabberbot <http://thpinfo.com/2007/python-jabberbot/>`_ with
-few additional features to improve stability.
+Xmpp/jabber bot framework makes implementation of your jabber bot
+straightforward and quick.
 
+pyjabberbot is a fork of `python-jabberbot <http://thpinfo.com/2007/python-jabberbot/>`_
+with focus on overall stability and availability of the bot.
+
+Feautures:
+-----------
+ - fault tolerance
+ - connection monitoring, auto-reconnect
+ - command handling
 
 Requirements:
 --------------
+ - python
  - xmpppy
+
+Installation:
+--------------
+ - from python package index
+
+   easy_install pyjabberbot
+
+ - or download the package and run
+
+   python setup.py install
+
+Usage:
+-------
+ - subclass either `SimpleBot` (or `PersistentBot` if you want connection
+   monitoring and auto-reconnect features)
+ - decorate your custom methods with `botcmd` decorator, these methods will
+   then serve as command handlers
+ - create an instance of your new class, supplying jid and password
+ - issue commands to your new bot
