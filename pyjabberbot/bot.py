@@ -335,6 +335,7 @@ class JabberBot(object):
         """Returns a help string listing available options.
 
         Automatically assigned to the "help" command."""
+        description = ''
         if self.__doc__:
             description = '%s\n' % self.__doc__.strip()
 
