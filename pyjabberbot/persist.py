@@ -81,6 +81,6 @@ class PersistentJabberBot(SimpleBot):
 
         return super(PersistentJabberBot, self).callback_message(conn, msg)
 
-    def serve_forever(self):
-        super(PersistentJabberBot, self).serve_forever()
+    def serve_forever(self, *args, **kwargs):
+        super(PersistentJabberBot, self).serve_forever(*args, **kwargs)
         self.alive_running = False
