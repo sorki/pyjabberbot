@@ -130,12 +130,20 @@ class JabberBot(object):
             time.sleep(5)
             self.reconnect()
 
-    def join_room(self, room, username=None):
+    def join_room(self, room, password=None, username=None,
+            history={'maxchars': '0', 'maxstanzas': '1'}):
         """Join the specified multi-user chat room"""
         if username is None:
             username = self.__username.split('@')[0]
-        self.connect().send(
-            xmpp.Presence(to='/'.join((room, username))))
+        presence = xmpp.Presence(to='/'.join((room, username)))
+
+        x = presence.setTag('x', namespace=xmpp.protocol.NS_MUC)
+        if password is not None:
+            x.setTagData('password', password)
+
+        if history is not None:
+            x.addChild('history', history)
+        self.connect().send(presence)
 
     def quit(self):
         """Stop serving messages and exit.  """
