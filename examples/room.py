@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import time
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
@@ -23,13 +24,17 @@ if __name__ == '__main__':
         sys.exit(1)
 
     bot = RoomBot(sys.argv[1], sys.argv[2])
+    room = sys.argv[3]
     # to join room:
-    bot.join_room(sys.argv[3])
+    bot.join_room(room)
     # to join with different nickname:
-    #bot.join_room(sys.argv[3], username='Roommate')
+    #bot.join_room(room, username='Roommate')
     # to join passworded room use password argument:
-    # bot.join_room(sys.argv[3], password='your_password')
+    # bot.join_room(room, password='your_password')
     # to receive room history set history to None:
-    # bot.join_room(sys.argv[3], history=None)
+    # bot.join_room(room, history=None)
+
+    time.sleep(1)
+    bot.send(room, 'Hello all', 'groupchat')
 
     bot.serve_forever()
