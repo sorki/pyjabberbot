@@ -153,17 +153,17 @@ class JabberBot(object):
         """Send an XMPP message"""
         self.connect().send(msg)
 
-    def send(self, user, text, in_reply_to=None, msg_type='chat'):
-        """Sends a simple message to the specified user."""
+    def send(self, to, text, typ='chat', in_reply_to=None):
+        """Sends a message to the specified user or chat"""
         msg = self.build_message(text)
-        msg.setTo(user)
+        msg.setTo(to)
 
         if in_reply_to:
             msg.setThread(in_reply_to.getThread())
             msg.setType(in_reply_to.getType())
         else:
-            msg.setThread(self.__threads.get(user, None))
-            msg.setType(msg_type)
+            msg.setThread(self.__threads.get(to, None))
+            msg.setType(typ)
 
         self.send_message(msg)
 
