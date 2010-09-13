@@ -269,7 +269,7 @@ class JabberBot(object):
             # Incoming presence subscription request
             if subscription in ('to', 'both', 'from'):
                 self.roster.Authorize(jid)
-                self._send_status()
+                self.status = self.status
 
             if subscription not in ('to', 'both'):
                 self.roster.Subscribe(jid)
