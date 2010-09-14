@@ -219,7 +219,7 @@ class JabberBot(object):
 
         If the parameter 'only_available' is True, the broadcast
         will not go to users whose status is not 'Available'."""
-        for jid, status in self.__seen.items():
+        for jid, status in self.__seen.iteritems():
             if not only_available or status[0] is self.AVAILABLE:
                 self.send(jid, msg)
 
