@@ -135,7 +135,7 @@ class JabberBot(object):
             history={'maxchars': '0', 'maxstanzas': '1'}):
         """Join the specified multi-user chat room"""
         if username is None:
-            username = self.__username.split('@')[0]
+            username = self.jid.getNode()
         presence = xmpp.Presence(to='/'.join((room, username)))
 
         x = presence.setTag('x', namespace=xmpp.protocol.NS_MUC)
