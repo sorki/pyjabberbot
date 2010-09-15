@@ -59,6 +59,7 @@ class JabberBot(object):
         self.roster = None
         self.commands = {}
         self.xmpp_debug = []
+        self.reconnecting = False
         self.ignore_offline = False
 
         for name, value in inspect.getmembers(self):
@@ -76,7 +77,7 @@ class JabberBot(object):
     @status.setter
     def status(self, value):
         self.__status = value
-        self.conn.send(xmpp.dispatcher.Presence(
+        self.rawsend(xmpp.dispatcher.Presence(
             show=self.__status[0], status=self.__status[1]))
 
     def connect(self, handlers = None):
@@ -122,6 +123,7 @@ class JabberBot(object):
         """Try to reconnect"""
         self.conn = None
         self.roster = None
+        self.reconnecting = True
         self.log.debug('reconnecting')
         self.connect()
         if self.conn:
@@ -130,6 +132,22 @@ class JabberBot(object):
             self.log.warn('reconnect failed, retrying in 5 seconds')
             time.sleep(5)
             self.reconnect()
+
+        self.reconnecting = False
+
+    def rawsend(self, stanza):
+        """ Send stanza to server """
+        if self.conn == None:
+            if self.reconnecting:
+                while self.reconnecting:
+                    time.sleep(1)
+            else:
+                self.connect()
+
+        if self.conn == None:
+            return
+
+        self.conn.send(stanza)
 
     def join_room(self, room, password=None, username=None,
             history={'maxchars': '0', 'maxstanzas': '1'}):
@@ -144,7 +162,7 @@ class JabberBot(object):
 
         if history is not None:
             x.addChild('history', history)
-        self.connect().send(presence)
+        self.rawsend(presence)
 
     def quit(self):
         """Stop serving messages and exit.  """
@@ -152,7 +170,7 @@ class JabberBot(object):
 
     def send_message(self, msg):
         """Send an XMPP message"""
-        self.connect().send(msg)
+        self.rawsend(msg)
 
     def send(self, to, text, typ='chat', in_reply_to=None):
         """Sends a message to the specified user or chat"""
