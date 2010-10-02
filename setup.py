@@ -4,7 +4,7 @@ import os
 from distutils.core import setup
 
 NAME = 'pyjabberbot'
-VERSION = '0.5'
+VERSION = '0.6'
 WEBSITE = 'http://github.com/sorki/pyjabberbot'
 LICENSE = 'GPLv3 or later'
 DESCRIPTION = 'Pyjabberbot, powerful xmpp bot implementation'
