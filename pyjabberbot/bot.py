@@ -23,12 +23,7 @@
 import re
 import sys
 import time
-
-try:
-    import xmpp
-except ImportError:
-    print >> sys.stderr, 'Install xmpppy from http://xmpppy.sf.net/.'
-    sys.exit(-1)
+import xmpp
 import inspect
 import logging
 import traceback
