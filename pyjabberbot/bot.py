@@ -35,6 +35,8 @@ import traceback
 
 from pyjabberbot import botcmd
 
+def no_fn(): pass
+
 class JabberBot(object):
     AVAILABLE, AWAY, CHAT = None, 'away', 'chat'
     DND, XA, OFFLINE = 'dnd', 'xa', 'unavailable'
@@ -61,6 +63,10 @@ class JabberBot(object):
         self.xmpp_debug = []
         self.reconnecting = False
         self.ignore_offline = False
+
+        self.on_connect = no_fn
+        self.on_reconnect = no_fn
+        self.on_disconnect = no_fn
 
         for name, value in inspect.getmembers(self):
             if (inspect.ismethod(value) and
@@ -128,6 +134,7 @@ class JabberBot(object):
         self.connect()
         if self.conn:
             self.log.info('bot reconnected')
+            self.on_reconnect()
         else:
             self.log.warn('reconnect failed, retrying in 5 seconds')
             time.sleep(5)
@@ -391,8 +398,7 @@ class JabberBot(object):
             self.log.warn('could not connect to server - aborting.')
             return
 
-        if connect_callback:
-            connect_callback()
+        self.on_connect()
 
         while not self.__finished:
             try:
@@ -415,5 +421,4 @@ class JabberBot(object):
                 self.log.info('trying to reconnect')
                 conn = self.reconnect()
 
-        if disconnect_callback:
-            disconnect_callback()
+        self.on_disconnect()
