@@ -101,6 +101,7 @@ if __name__ == '__main__':
     bot = BroadcastingBot(sys.argv[1], sys.argv[2])
 
     thread = threading.Thread(target = bot.thread_proc)
-    bot.serve_forever(connect_callback = lambda: thread.start())
+    bot.on_connect = lambda: thread.start()
+    bot.serve_forever()
     bot.thread_killed = True
 
