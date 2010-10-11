@@ -149,7 +149,12 @@ class JabberBot(object):
         if self.conn == None:
             return
 
-        self.conn.send(stanza)
+        try:
+            self.conn.send(stanza)
+        except IOError as e:
+            self.log.warning('Caught IOError when trying to send'
+                ' data: "%s", this is most likely caused by the'
+                ' server going down, recovery will follow.' % e.value)
 
     def join_room(self, room, password=None, username=None,
             history={'maxchars': '0', 'maxstanzas': '1'}):
