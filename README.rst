@@ -15,7 +15,7 @@ Features:
 
 Requirements:
 --------------
- - python
+ - python 2.6+
  - xmpppy
 
 Installation:

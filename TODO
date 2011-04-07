@@ -1,0 +1,6 @@
+# TODO (normal): fix multiline docstrings in help method
+# TODO (minor): EXAMPLES: split broadcast to broadcast and "auto message every 60 seconds"
+# TODO (major): unit tests
+# TODO (docs): exhaustive documentation
+# TODO (minor): support for multiple xmpp backends ( e.g. testing backend )
+
