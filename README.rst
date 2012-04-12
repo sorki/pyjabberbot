@@ -1,6 +1,9 @@
 pyjabberbot
 ============
 
+IMPORTANT: this fork is no longer maintained as the original project (`python-jabberbot <http://thpinfo.com/2007/python-jabberbot/>`_) 
+implemented all of the features of this fork. Please migrate to python-jabberbot - this fork will be deleted in few months.
+
 Xmpp/jabber bot framework makes implementation of your jabber bot
 straightforward and quick.
 
